@@ -2,10 +2,10 @@ import { useEffect, useState, useRef } from "react";
 import { BreadcrumbWrapper } from "../custom_ui/CustomBreadCrumb";
 import { User, LogOut } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-// import { NotificationsDropdown } from "../Notifications/NotificationsDropdown";
+import { NotificationsDropdown } from "./NotificationsDropdown"; // Updated import
 import { useNavigate } from "react-router-dom";
-// import { useTheme } from "../../contexts/ThemeProvider";
 import { useAuth } from "@/contexts/AuthContext";
+
 // Define types
 interface TimeState {
   date: string;
@@ -37,7 +37,6 @@ export function Header({ isExpanded, pages }: HeaderProps) {
   const [showDropdown, setShowDropdown] = useState(false);
   const navigate = useNavigate();
   const dropdownRef = useRef<HTMLDivElement>(null);
-  // const { theme } = useTheme();
 
   useEffect(() => {
     // Get user from localStorage
@@ -114,7 +113,6 @@ export function Header({ isExpanded, pages }: HeaderProps) {
 
   const handleLogout = () => {
     localStorage.removeItem("User");
-    // setUser(null);
     setShowDropdown(false);
     navigate("/login");
   };
@@ -235,8 +233,8 @@ export function Header({ isExpanded, pages }: HeaderProps) {
 
       {/* Right - Icons & Time */}
       <div className="flex items-center gap-4">
-        {/* Notification */}
-        {/* <NotificationsDropdown /> */}
+        {/* Notification - Placed to the left of Profile icon */}
+        <NotificationsDropdown />
 
         {/* Profile with Dropdown */}
         <div className="relative" ref={dropdownRef}>

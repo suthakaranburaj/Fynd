@@ -9,6 +9,10 @@ export interface CompanyMember {
 }
 
 export interface CompanyTeam {
+  description: any;
+  department: any;
+  teamLead: any;
+  status: any;
   id: string;
   teamName: string;
   createdAt: string;
@@ -26,7 +30,10 @@ export interface CompanyMemberFormData {
 }
 
 export interface CompanyTeamFormData {
+  description: string | number | readonly string[] | undefined;
+  department: string | undefined;
+  teamLead: string | undefined;
+  status: string | undefined;
   teamName: string;
   members: string[];
-  tasks: string[];
 }

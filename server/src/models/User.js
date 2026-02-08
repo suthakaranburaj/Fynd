@@ -56,5 +56,6 @@ const userSchema = new mongoose.Schema(
 
 // Index for faster queries
 userSchema.index({ email: 1 });
+userSchema.index({ organization: 1 });
 
 export default mongoose.model("User", userSchema);
