@@ -11,71 +11,130 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { Bell, Volume2, Mail, Save, RefreshCw } from "lucide-react";
+import { Bell, Volume2, Mail, Save, RefreshCw, Loader2 } from "lucide-react";
 import { CustomAlert } from "@/components/custom_ui";
 import { toast } from "sonner";
+import {
+  settingsService,
+  type NotificationSettings,
+} from "@/services/settingsService";
 
+// Update the interface to match backend structure
 interface SettingsData {
-  notifications: {
-    emailReminders: boolean;
-    pushNotifications: boolean;
-    soundEnabled: boolean;
-  };
+  notifications: NotificationSettings;
 }
 
 export default function Settings() {
   const [settings, setSettings] = useState<SettingsData>({
     notifications: {
-      emailReminders: true,
-      pushNotifications: true,
-      soundEnabled: true,
+      emailReminder: true,
+      pushNotification: true,
+      notificationSound: true,
     },
   });
 
   const [resetAlertOpen, setResetAlertOpen] = useState(false);
   const [saveAlertOpen, setSaveAlertOpen] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [originalSettings, setOriginalSettings] = useState<string>("");
 
-  // Load saved settings on mount
+  // Load saved settings on mount from API
   useEffect(() => {
-    const savedSettings = localStorage.getItem("taskchaser_settings");
-    if (savedSettings) {
-      setSettings(JSON.parse(savedSettings));
-    }
+    loadSettingsFromAPI();
   }, []);
+
+  // Load settings from backend API
+  const loadSettingsFromAPI = async () => {
+    setIsLoading(true);
+    try {
+      const notificationSettings =
+        await settingsService.getNotificationSettings();
+
+      setSettings({
+        notifications: notificationSettings,
+      });
+
+      // Store original settings for change detection
+      setOriginalSettings(JSON.stringify(notificationSettings));
+    } catch (error) {
+      toast.error("Failed to load settings from server");
+      console.error("Error loading settings:", error);
+
+      // Fallback to local storage
+      const localSettings = settingsService.getSettingsFromLocalStorage();
+      setSettings({
+        notifications: localSettings,
+      });
+      setOriginalSettings(JSON.stringify(localSettings));
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Track changes
   useEffect(() => {
-    const originalSettings = localStorage.getItem("taskchaser_settings");
-    setHasUnsavedChanges(originalSettings !== JSON.stringify(settings));
-  }, [settings]);
+    const currentSettings = JSON.stringify(settings.notifications);
+    setHasUnsavedChanges(originalSettings !== currentSettings);
+  }, [settings, originalSettings]);
 
-  const handleToggle = (section: keyof SettingsData, key: string) => {
+  const handleToggle = (key: keyof NotificationSettings) => {
     setSettings((prev) => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        [key]: !(prev[section] as Record<string, boolean>)[key],
+      notifications: {
+        ...prev.notifications,
+        [key]: !prev.notifications[key],
       },
     }));
   };
 
-  const handleSaveSettings = () => {
-    localStorage.setItem("taskchaser_settings", JSON.stringify(settings));
-    toast.success("Settings saved successfully!");
-    setHasUnsavedChanges(false);
+  const handleSaveSettings = async () => {
+    setIsSaving(true);
+    try {
+      // Update settings on backend
+      const updatedSettings = await settingsService.updateNotificationSettings(
+        settings.notifications,
+      );
+
+      // Update local state
+      setSettings({
+        notifications: updatedSettings,
+      });
+
+      // Update original settings reference
+      setOriginalSettings(JSON.stringify(updatedSettings));
+
+      toast.success("Settings saved successfully!");
+      setHasUnsavedChanges(false);
+    } catch (error) {
+      toast.error("Failed to save settings. Using local storage as fallback.");
+      console.error("Error saving settings:", error);
+
+      // Save to local storage as fallback
+      settingsService.saveSettingsToLocalStorage(settings.notifications);
+
+      // Update original settings reference
+      setOriginalSettings(JSON.stringify(settings.notifications));
+      setHasUnsavedChanges(false);
+    } finally {
+      setIsSaving(false);
+      setSaveAlertOpen(false);
+    }
   };
 
-  const handleResetSettings = () => {
-    const defaultSettings: SettingsData = {
-      notifications: {
-        emailReminders: true,
-        pushNotifications: true,
-        soundEnabled: true,
-      },
+  const handleResetSettings = async () => {
+    const defaultSettings: NotificationSettings = {
+      emailReminder: true,
+      pushNotification: true,
+      notificationSound: true,
     };
-    setSettings(defaultSettings);
+
+    setSettings({
+      notifications: defaultSettings,
+    });
+
     toast.success("Settings reset to defaults!");
+    setResetAlertOpen(false);
   };
 
   // Animation variants
@@ -102,6 +161,19 @@ export default function Settings() {
       },
     },
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4 md:p-6 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-600" />
+          <p className="mt-2 text-gray-600 dark:text-gray-400">
+            Loading settings...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4 md:p-6">
@@ -157,7 +229,7 @@ export default function Settings() {
                   <div className="flex items-center gap-3">
                     <Mail className="w-4 h-4 text-gray-500" />
                     <div>
-                      <Label htmlFor="emailReminders" className="font-medium">
+                      <Label htmlFor="emailReminder" className="font-medium">
                         Email Reminders
                       </Label>
                       <p className="text-sm text-gray-500">
@@ -166,11 +238,10 @@ export default function Settings() {
                     </div>
                   </div>
                   <Switch
-                    id="emailReminders"
-                    checked={settings.notifications.emailReminders}
-                    onCheckedChange={() =>
-                      handleToggle("notifications", "emailReminders")
-                    }
+                    id="emailReminder"
+                    checked={settings.notifications.emailReminder}
+                    onCheckedChange={() => handleToggle("emailReminder")}
+                    disabled={isSaving}
                   />
                 </div>
 
@@ -178,10 +249,7 @@ export default function Settings() {
                   <div className="flex items-center gap-3">
                     <Bell className="w-4 h-4 text-gray-500" />
                     <div>
-                      <Label
-                        htmlFor="pushNotifications"
-                        className="font-medium"
-                      >
+                      <Label htmlFor="pushNotification" className="font-medium">
                         Push Notifications
                       </Label>
                       <p className="text-sm text-gray-500">
@@ -190,11 +258,10 @@ export default function Settings() {
                     </div>
                   </div>
                   <Switch
-                    id="pushNotifications"
-                    checked={settings.notifications.pushNotifications}
-                    onCheckedChange={() =>
-                      handleToggle("notifications", "pushNotifications")
-                    }
+                    id="pushNotification"
+                    checked={settings.notifications.pushNotification}
+                    onCheckedChange={() => handleToggle("pushNotification")}
+                    disabled={isSaving}
                   />
                 </div>
 
@@ -202,7 +269,10 @@ export default function Settings() {
                   <div className="flex items-center gap-3">
                     <Volume2 className="w-4 h-4 text-gray-500" />
                     <div>
-                      <Label htmlFor="soundEnabled" className="font-medium">
+                      <Label
+                        htmlFor="notificationSound"
+                        className="font-medium"
+                      >
                         Notification Sound
                       </Label>
                       <p className="text-sm text-gray-500">
@@ -211,14 +281,21 @@ export default function Settings() {
                     </div>
                   </div>
                   <Switch
-                    id="soundEnabled"
-                    checked={settings.notifications.soundEnabled}
-                    onCheckedChange={() =>
-                      handleToggle("notifications", "soundEnabled")
-                    }
+                    id="notificationSound"
+                    checked={settings.notifications.notificationSound}
+                    onCheckedChange={() => handleToggle("notificationSound")}
+                    disabled={isSaving}
                   />
                 </div>
               </div>
+
+              {/* Status message */}
+              {isSaving && (
+                <div className="flex items-center gap-2 text-sm text-blue-600">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Saving to server...
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>
@@ -232,6 +309,7 @@ export default function Settings() {
             variant="outline"
             onClick={() => setResetAlertOpen(true)}
             className="flex items-center gap-2"
+            disabled={isSaving}
           >
             <RefreshCw className="w-4 h-4" />
             Reset to Defaults
@@ -239,7 +317,7 @@ export default function Settings() {
           <Button
             onClick={() => setSaveAlertOpen(true)}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
-            disabled={!hasUnsavedChanges}
+            disabled={!hasUnsavedChanges || isSaving}
           >
             <Save className="w-4 h-4" />
             Save Changes
@@ -263,7 +341,7 @@ export default function Settings() {
         open={saveAlertOpen}
         onOpenChange={setSaveAlertOpen}
         mainText="Save Changes"
-        subText="Your settings will be saved and applied immediately."
+        subText="Your settings will be saved to the server and applied immediately."
         nextButtonText="Save"
         cancelButtonText="Cancel"
         onNext={handleSaveSettings}

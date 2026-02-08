@@ -61,13 +61,13 @@ export const navItems: NavItem[] = [
     id: "calendar",
     pages: "Home, Calendar",
   },
-  {
-    icon: User,
-    label: "Profile",
-    href: "/profile",
-    id: "profile",
-    pages: "Home, Profile",
-  },
+  // {
+  //   icon: User,
+  //   label: "Profile",
+  //   href: "/profile",
+  //   id: "profile",
+  //   pages: "Home, Profile",
+  // },
   {
     icon: Settings,
     label: "Settings",

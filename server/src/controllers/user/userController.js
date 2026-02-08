@@ -57,7 +57,7 @@ export const register = asyncHandler(async (req, res) => {
 // Login User
 export const login = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
-    console.log("email:", email);
+
     // Find user
     const user = await User.findOne({ email });
     if (!user) {
@@ -109,6 +109,75 @@ export const checkAuth = asyncHandler(async (req, res) => {
         }
 
         return sendResponse(res, true, { user }, "Authentication successful", 200);
+    } catch (error) {
+        return sendResponse(res, false, null, "Invalid or expired token", 401);
+    }
+});
+
+// Update User Settings
+export const updateSettings = asyncHandler(async (req, res) => {
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+        return sendResponse(res, false, null, "No token provided", 401);
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+        const user = await User.findById(decoded.userId);
+
+        if (!user) {
+            return sendResponse(res, false, null, "User not found", 404);
+        }
+
+        const { emailReminder, pushNotification, notificationSound } = req.body;
+
+        // Update notification preferences
+        if (emailReminder !== undefined) {
+            user.notificationPreferences.emailReminder = emailReminder;
+        }
+        if (pushNotification !== undefined) {
+            user.notificationPreferences.pushNotification = pushNotification;
+        }
+        if (notificationSound !== undefined) {
+            user.notificationPreferences.notificationSound = notificationSound;
+        }
+
+        await user.save();
+
+        // Prepare user data for response (without password)
+        const userData = user.toObject();
+        delete userData.password;
+
+        return sendResponse(res, true, { user: userData }, "Settings updated successfully", 200);
+    } catch (error) {
+        return sendResponse(res, false, null, "Invalid or expired token", 401);
+    }
+});
+
+// Get User Settings
+export const getSettings = asyncHandler(async (req, res) => {
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+        return sendResponse(res, false, null, "No token provided", 401);
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+        const user = await User.findById(decoded.userId).select("notificationPreferences");
+
+        if (!user) {
+            return sendResponse(res, false, null, "User not found", 404);
+        }
+
+        return sendResponse(
+            res,
+            true,
+            { settings: user.notificationPreferences },
+            "Settings retrieved successfully",
+            200
+        );
     } catch (error) {
         return sendResponse(res, false, null, "Invalid or expired token", 401);
     }

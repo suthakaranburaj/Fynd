@@ -40,8 +40,9 @@ const userSchema = new mongoose.Schema(
             default: "user"
         },
         notificationPreferences: {
-            email: { type: Boolean, default: true },
-            push: { type: Boolean, default: true }
+            emailReminder: { type: Boolean, default: true },
+            pushNotification: { type: Boolean, default: true },
+            notificationSound: { type: Boolean, default: true }
         },
         lastLogin: {
             type: Date,
@@ -50,13 +51,6 @@ const userSchema = new mongoose.Schema(
     },
     {
         timestamps: true,
-        toJSON: {
-            transform: function (doc, ret) {
-                delete ret.password;
-                delete ret.__v;
-                return ret;
-            }
-        }
     }
 );
 

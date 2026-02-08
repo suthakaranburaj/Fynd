@@ -1,13 +1,11 @@
 import { sendResponse } from "../utils/apiResonse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import jwt from "jsonwebtoken";
-import { statusType } from "../utils/statusType.js"; // Make sure this is correctly imported
+import { statusType } from "../utils/statusType.js";
 import User from "../models/User.js";
 
 export const verifyJWT = asyncHandler(async (req, res, next) => {
     const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "");
-    // console.log("Token being verified:", token);
-    // console.log("Secret being used:", process.env.ACCESS_TOKEN_SECRET);
 
     if (!token) {
         return sendResponse(
@@ -22,10 +20,8 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
     try {
         const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
-        // const user = await User.findById(decodedToken?._id).select(
-        //   "-password -refreshToken"
-        // );
-        const user = await User.findById(decodedToken?.user_id).select("-password");
+        // Use 'userId' as in your generateToken function
+        const user = await User.findById(decodedToken?.userId).select("-password");
 
         if (!user) {
             return sendResponse(
