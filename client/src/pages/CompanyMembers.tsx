@@ -481,24 +481,6 @@ export default function CompanyMembers() {
                     Refresh
                   </Button>
                 </motion.div>
-
-                <motion.div
-                  variants={buttonVariants}
-                  whileHover="hover"
-                  whileTap="tap"
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                >
-                  <Button
-                    onClick={handleAddMember}
-                    className="gap-2 bg-primary hover:bg-primary/90"
-                    disabled={isLoading}
-                  >
-                    <Plus className="h-4 w-4" />
-                    New Member
-                  </Button>
-                </motion.div>
               </motion.div>
             </div>
           </motion.div>
