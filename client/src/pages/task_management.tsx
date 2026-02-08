@@ -1,33 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
-import { motion } from "framer-motion";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { useState, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -36,69 +7,56 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Plus,
   Filter,
   Search,
+  X,
+  Calendar,
+  Plus,
   Clock,
-  Users,
-  AlertCircle,
-  CheckCircle,
-  MoreVertical,
+  User,
   Edit,
   Trash2,
-  Loader2,
-  Eye,
-  EyeOff,
-  Calendar,
-  Tag,
-  User,
-  Download,
-  Upload,
   RefreshCw,
-  ChevronDown,
   ChevronUp,
-  ArrowUpDown,
+  ChevronDown,
 } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { CustomPagination } from "@/components/custom_ui";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { format, parse, isValid, parseISO } from "date-fns";
+import {
+  containerVariants,
+  itemVariants,
+  rowVariants,
+  headerVariants,
+  buttonVariants,
+} from "../components/FramerVariants";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import { CustomPagination } from "@/components/custom_ui/CustomPagination";
+import { CustomAlert } from "@/components/custom_ui";
+import { useDebounce } from "@/utils/debounce";
+import TaskFormModal from "../components/forms/TaskFormModal";
+import { type Task, type TeamMember } from "../types/task.types";
+import { TaskStatusBadge, PriorityBadge } from "../components/TaskBadges";
 
-// Types
-interface Task {
-  id: string;
-  title: string;
-  description?: string;
-  dueDate: string;
-  assignedTo: string;
-  assignedBy: string;
-  status: "pending" | "in-progress" | "completed" | "overdue";
-  priority: "low" | "medium" | "high";
-  tags?: string[];
-  project?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface TeamMember {
-  id: string;
-  name: string;
-  email: string;
-  avatar?: string;
-}
-
-// Mock data - In production, this would come from your API
+// Mock data
 const MOCK_TASKS: Task[] = Array.from({ length: 45 }, (_, i) => ({
   id: `task-${i + 1}`,
   title: `Task ${i + 1}`,
@@ -146,692 +104,323 @@ const MOCK_TEAM_MEMBERS: TeamMember[] = [
   { id: "5", name: "Alex Brown", email: "alex@example.com" },
 ];
 
-// Constants
-const ITEMS_PER_PAGE = 10;
-
-// Skeleton loading component
-const TaskManagementSkeleton = () => {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4 md:p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header Skeleton */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-          <div className="space-y-3">
-            <div className="h-8 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-            <div className="h-4 w-64 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-          </div>
-          <div className="flex gap-2">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="h-10 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
-              ></div>
-            ))}
-          </div>
-        </div>
-
-        {/* Filters Skeleton */}
-        <Card className="border border-gray-200 dark:border-gray-700 shadow-sm">
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="space-y-2">
-                  <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                  <div className="h-10 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Stats Skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Card
-              key={i}
-              className="border border-gray-200 dark:border-gray-700 shadow-sm"
-            >
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-3">
-                    <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                    <div className="h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                  </div>
-                  <div className="h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Table Skeleton */}
-        <Card className="border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-          <CardHeader className="bg-gray-50 dark:bg-gray-800/50 border-b">
-            <div className="flex justify-between items-center">
-              <div className="space-y-2">
-                <div className="h-6 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                <div className="h-4 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-              </div>
-              <div className="flex gap-2">
-                <div className="h-10 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                <div className="h-10 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {[1, 2, 3, 4, 5, 6, 7].map((i) => (
-                      <TableHead key={i}>
-                        <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={i}>
-                      {Array.from({ length: 7 }).map((_, j) => (
-                        <TableCell key={j}>
-                          <div className="h-4 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Pagination Skeleton */}
-        <div className="flex justify-center">
-          <div className="flex items-center gap-2">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div
-                key={i}
-                className="h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
-              ></div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Task status badge component
-const TaskStatusBadge = ({ status }: { status: Task["status"] }) => {
-  const variants = {
-    pending: {
-      bg: "bg-yellow-100 dark:bg-yellow-900/30",
-      text: "text-yellow-800 dark:text-yellow-300",
-      icon: Clock,
-    },
-    "in-progress": {
-      bg: "bg-blue-100 dark:bg-blue-900/30",
-      text: "text-blue-800 dark:text-blue-300",
-      icon: Clock,
-    },
-    completed: {
-      bg: "bg-green-100 dark:bg-green-900/30",
-      text: "text-green-800 dark:text-green-300",
-      icon: CheckCircle,
-    },
-    overdue: {
-      bg: "bg-red-100 dark:bg-red-900/30",
-      text: "text-red-800 dark:text-red-300",
-      icon: AlertCircle,
-    },
-  };
-
-  const { bg, text, icon: Icon } = variants[status];
-
-  return (
-    <Badge variant="secondary" className={`${bg} ${text} gap-1`}>
-      <Icon className="h-3 w-3" />
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </Badge>
-  );
-};
-
-// Priority badge component
-const PriorityBadge = ({ priority }: { priority: Task["priority"] }) => {
-  const variants = {
-    low: {
-      bg: "bg-green-100 dark:bg-green-900/30",
-      text: "text-green-800 dark:text-green-300",
-    },
-    medium: {
-      bg: "bg-yellow-100 dark:bg-yellow-900/30",
-      text: "text-yellow-800 dark:text-yellow-300",
-    },
-    high: {
-      bg: "bg-red-100 dark:bg-red-900/30",
-      text: "text-red-800 dark:text-red-300",
-    },
-  };
-
-  const { bg, text } = variants[priority];
-
-  return (
-    <Badge variant="secondary" className={`${bg} ${text}`}>
-      {priority.charAt(0).toUpperCase() + priority.slice(1)}
-    </Badge>
-  );
-};
-
-// Task detail modal component
-const TaskDetailModal = ({
-  task,
-  isOpen,
-  onClose,
-  onDelete,
-  onEdit,
-}: {
-  task: Task | null;
-  isOpen: boolean;
-  onClose: () => void;
-  onDelete: (id: string) => void;
-  onEdit: (task: Task) => void;
-}) => {
-  if (!task) return null;
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <div className="flex items-start justify-between">
-            <div>
-              <DialogTitle className="text-2xl">{task.title}</DialogTitle>
-              <DialogDescription className="mt-2">
-                {task.description}
-              </DialogDescription>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => onEdit(task)}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => {
-                  onDelete(task.id);
-                  onClose();
-                }}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </DialogHeader>
-
-        <div className="grid grid-cols-2 gap-6 mt-6">
-          {/* Task Details */}
-          <div className="space-y-4">
-            <div>
-              <h4 className="text-sm font-medium text-gray-500 mb-2">Status</h4>
-              <TaskStatusBadge status={task.status} />
-            </div>
-            <div>
-              <h4 className="text-sm font-medium text-gray-500 mb-2">
-                Priority
-              </h4>
-              <PriorityBadge priority={task.priority} />
-            </div>
-            <div>
-              <h4 className="text-sm font-medium text-gray-500 mb-2">
-                Due Date
-              </h4>
-              <p className="text-sm">{format(parseISO(task.dueDate), "PPP")}</p>
-            </div>
-            <div>
-              <h4 className="text-sm font-medium text-gray-500 mb-2">
-                Created At
-              </h4>
-              <p className="text-sm">
-                {format(parseISO(task.createdAt), "PPP")}
-              </p>
-            </div>
-          </div>
-
-          {/* Assignment Details */}
-          <div className="space-y-4">
-            <div>
-              <h4 className="text-sm font-medium text-gray-500 mb-2">
-                Assigned To
-              </h4>
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-                  <User className="h-4 w-4" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">{task.assignedTo}</p>
-                  <p className="text-xs text-gray-500">Team Member</p>
-                </div>
-              </div>
-            </div>
-            <div>
-              <h4 className="text-sm font-medium text-gray-500 mb-2">
-                Assigned By
-              </h4>
-              <p className="text-sm">{task.assignedBy}</p>
-            </div>
-            {task.project && (
-              <div>
-                <h4 className="text-sm font-medium text-gray-500 mb-2">
-                  Project
-                </h4>
-                <Badge variant="outline">{task.project}</Badge>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Tags */}
-        {task.tags && task.tags.length > 0 && (
-          <div className="mt-6">
-            <h4 className="text-sm font-medium text-gray-500 mb-2">Tags</h4>
-            <div className="flex flex-wrap gap-2">
-              {task.tags.map((tag) => (
-                <Badge key={tag} variant="secondary">
-                  <Tag className="h-3 w-3 mr-1" />
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <DialogFooter className="mt-6">
-          <Button variant="outline" onClick={onClose}>
-            Close
-          </Button>
-          <Button
-            onClick={() => {
-              // Trigger Boltic automation for follow-up
-              toast.success("Follow-up reminder scheduled via Boltic");
-            }}
-          >
-            Schedule Follow-up
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
-// Create/Edit task form component
-const TaskForm = ({
-  isOpen,
-  onClose,
-  onSubmit,
-  initialData,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (task: Partial<Task>) => void;
-  initialData?: Partial<Task>;
-}) => {
-  const [formData, setFormData] = useState<Partial<Task>>({
-    title: "",
-    description: "",
-    dueDate: format(new Date(), "yyyy-MM-dd"),
-    assignedTo: "",
-    priority: "medium" as const,
-    status: "pending" as const,
-    ...initialData,
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formData);
-    onClose();
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {initialData ? "Edit Task" : "Create New Task"}
-          </DialogTitle>
-          <DialogDescription>
-            {initialData
-              ? "Update task details"
-              : "Add a new task to the system"}
-          </DialogDescription>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="title">Title *</Label>
-            <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) =>
-                setFormData({ ...formData, title: e.target.value })
-              }
-              required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Input
-              id="description"
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="dueDate">Due Date</Label>
-              <Input
-                id="dueDate"
-                type="date"
-                value={formData.dueDate}
-                onChange={(e) =>
-                  setFormData({ ...formData, dueDate: e.target.value })
-                }
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="assignedTo">Assign To</Label>
-              <Select
-                value={formData.assignedTo}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, assignedTo: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select team member" />
-                </SelectTrigger>
-                <SelectContent>
-                  {MOCK_TEAM_MEMBERS.map((member) => (
-                    <SelectItem key={member.id} value={member.email}>
-                      {member.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="priority">Priority</Label>
-              <Select
-                value={formData.priority}
-                onValueChange={(value: Task["priority"]) =>
-                  setFormData({ ...formData, priority: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="status">Status</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value: Task["status"]) =>
-                  setFormData({ ...formData, status: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="in-progress">In Progress</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {formData.project && (
-            <div>
-              <Label htmlFor="project">Project</Label>
-              <Input
-                id="project"
-                value={formData.project}
-                onChange={(e) =>
-                  setFormData({ ...formData, project: e.target.value })
-                }
-              />
-            </div>
-          )}
-
-          <DialogFooter className="mt-6">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit">
-              {initialData ? "Update Task" : "Create Task"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
+// Main Task Management Component
 export default function TaskManagement() {
+  // State for tasks
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-  const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState<Partial<Task> | undefined>();
-  const [searchQuery, setSearchQuery] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+
+  // Delete confirmation state
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+
+  // Filter state
+  const [filters, setFilters] = useState({
+    search: "",
+    title: "",
+    assignedTo: "all" as string | "all",
+    status: "all" as "all" | Task["status"],
+    priority: "all" as "all" | Task["priority"],
+    project: "",
+    dueDate: undefined as Date | undefined,
+  });
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [itemsPerPage, setItemsPerPage] = useState<number>(10);
+  const [totalItems, setTotalItems] = useState<number>(0);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [showFilters, setShowFilters] = useState<boolean>(false);
+
+  // Local state for immediate input values (before debounce)
+  const [searchInput, setSearchInput] = useState<string>("");
+  const [titleInput, setTitleInput] = useState<string>("");
+  const [projectInput, setProjectInput] = useState<string>("");
+  const [dueDateInput, setDueDateInput] = useState<string>("");
+
+  // Sort state
   const [sortConfig, setSortConfig] = useState<{
     key: keyof Task;
     direction: "asc" | "desc";
   } | null>(null);
 
-  // Filters
-  const [filters, setFilters] = useState<{
-    status?: Task["status"];
-    priority?: Task["priority"];
-    assignedTo?: string;
-  }>({});
+  // Create debounced filter functions
+  const debouncedSetSearch = useDebounce((value: string) => {
+    setFilters((prev) => ({ ...prev, search: value }));
+  }, 300);
 
-  // Simulate loading tasks from API
-  useEffect(() => {
-    const loadTasks = async () => {
-      try {
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+  const debouncedSetTitle = useDebounce((value: string) => {
+    setFilters((prev) => ({ ...prev, title: value }));
+  }, 300);
 
-        // For demo, use mock data
-        setTasks(MOCK_TASKS);
-        setIsLoading(false);
-        setIsRefreshing(false);
-      } catch (error) {
-        console.error("Failed to load tasks:", error);
-        toast.error("Failed to load tasks");
-        setIsLoading(false);
-        setIsRefreshing(false);
-      }
-    };
+  const debouncedSetProject = useDebounce((value: string) => {
+    setFilters((prev) => ({ ...prev, project: value }));
+  }, 300);
 
-    loadTasks();
-  }, []);
-
-  // Handle refresh
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    // Simulate refresh delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setTasks(MOCK_TASKS);
-    setIsRefreshing(false);
-    toast.success("Tasks refreshed");
+  // Handle search input change with debounce
+  const handleSearchChange = (value: string) => {
+    setSearchInput(value);
+    debouncedSetSearch(value);
   };
 
-  // Filter and sort tasks
-  const filteredAndSortedTasks = useMemo(() => {
-    let result = [...tasks];
-
-    // Apply search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (task) =>
-          task.title.toLowerCase().includes(query) ||
-          task.description?.toLowerCase().includes(query) ||
-          task.assignedTo.toLowerCase().includes(query) ||
-          task.project?.toLowerCase().includes(query),
-      );
-    }
-
-    // Apply status filter
-    if (filters.status) {
-      result = result.filter((task) => task.status === filters.status);
-    }
-
-    // Apply priority filter
-    if (filters.priority) {
-      result = result.filter((task) => task.priority === filters.priority);
-    }
-
-    // Apply assignedTo filter
-    if (filters.assignedTo) {
-      result = result.filter((task) => task.assignedTo === filters.assignedTo);
-    }
-
-    // Apply sorting
-    if (sortConfig) {
-      result.sort((a, b) => {
-        let aValue: string | number | string[] | undefined = a[sortConfig.key];
-        let bValue: string | number | string[] | undefined = b[sortConfig.key];
-
-        // Handle dates
-        if (
-          sortConfig.key === "dueDate" ||
-          sortConfig.key === "createdAt" ||
-          sortConfig.key === "updatedAt"
-        ) {
-          aValue = new Date(aValue as string).getTime();
-          bValue = new Date(bValue as string).getTime();
-        }
-
-        // Handle undefined values
-        if (aValue === undefined && bValue === undefined) return 0;
-        if (aValue === undefined) return 1;
-        if (bValue === undefined) return -1;
-
-        if (aValue < bValue) {
-          return sortConfig.direction === "asc" ? -1 : 1;
-        }
-        if (aValue > bValue) {
-          return sortConfig.direction === "asc" ? 1 : -1;
-        }
-        return 0;
-      });
-    }
-
-    return result;
-  }, [tasks, searchQuery, filters, sortConfig]);
-
-  // Paginate tasks
-  const paginatedTasks = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredAndSortedTasks.slice(
-      startIndex,
-      startIndex + ITEMS_PER_PAGE,
-    );
-  }, [filteredAndSortedTasks, currentPage]);
-
-  const totalPages = Math.ceil(filteredAndSortedTasks.length / ITEMS_PER_PAGE);
-
-  // Task statistics
-  const taskStats = useMemo(() => {
-    const total = tasks.length;
-    const pending = tasks.filter((t) => t.status === "pending").length;
-    const overdue = tasks.filter((t) => t.status === "overdue").length;
-    const completed = tasks.filter((t) => t.status === "completed").length;
-    const inProgress = tasks.filter((t) => t.status === "in-progress").length;
-
-    return { total, pending, overdue, completed, inProgress };
-  }, [tasks]);
-
-  // Task handlers
-  const handleTaskClick = (task: Task) => {
-    setSelectedTask(task);
-    setIsTaskModalOpen(true);
+  const handleTitleChange = (value: string) => {
+    setTitleInput(value);
+    debouncedSetTitle(value);
   };
 
-  const handleEditTask = (task: Task) => {
-    setEditingTask(task);
-    setIsTaskModalOpen(false);
-    setIsTaskFormOpen(true);
+  const handleProjectChange = (value: string) => {
+    setProjectInput(value);
+    debouncedSetProject(value);
   };
 
-  const handleDeleteTask = (id: string) => {
-    setTasks(tasks.filter((task) => task.id !== id));
-    toast.success("Task deleted successfully");
+  // Handle due date input change
+  const handleDueDateInputChange = (value: string) => {
+    setDueDateInput(value);
+    const parsedDate = parse(value, "dd/MM/yyyy", new Date());
+    if (isValid(parsedDate)) {
+      setFilters((prev) => ({ ...prev, dueDate: parsedDate }));
+    } else if (value === "") {
+      setFilters((prev) => ({ ...prev, dueDate: undefined }));
+    }
   };
 
-  const handleSubmitTask = (taskData: Partial<Task>) => {
-    if (editingTask?.id) {
-      // Update existing task
-      setTasks(
-        tasks.map((task) =>
-          task.id === editingTask.id
-            ? { ...task, ...taskData, id: task.id }
-            : task,
-        ),
-      );
-      toast.success("Task updated successfully");
+  // Handle calendar selection for due date
+  const handleDueDateSelect = (date: Date | undefined) => {
+    setFilters((prev) => ({ ...prev, dueDate: date }));
+    if (date) {
+      setDueDateInput(format(date, "dd/MM/yyyy"));
     } else {
-      // Create new task
-      const newTask: Task = {
-        id: `task-${Date.now()}`,
-        title: taskData.title || "Untitled Task",
-        description: taskData.description,
-        dueDate: taskData.dueDate || new Date().toISOString(),
-        assignedTo: taskData.assignedTo || "",
-        assignedBy: "me@example.com", // Current user
-        status: taskData.status || "pending",
-        priority: taskData.priority || "medium",
-        tags: taskData.tags,
-        project: taskData.project,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      setTasks([newTask, ...tasks]);
-      toast.success("Task created successfully");
-
-      // Simulate Boltic automation trigger
-      setTimeout(() => {
-        toast.info("Boltic automation triggered: Task assignment email sent");
-      }, 1000);
+      setDueDateInput("");
     }
-    setEditingTask(undefined);
   };
 
+  // Format date for display
+  const formatDateTime = (dateString: string) => {
+    if (!dateString) return "N/A";
+    try {
+      const date = parseISO(dateString);
+      if (isNaN(date.getTime())) return "Invalid date";
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return "Invalid date";
+    }
+  };
+
+  // Format date for short display
+  const formatDateShort = (dateString: string) => {
+    if (!dateString) return "N/A";
+    try {
+      const date = parseISO(dateString);
+      if (isNaN(date.getTime())) return "Invalid date";
+      return format(date, "MMM d, yyyy");
+    } catch {
+      return "Invalid date";
+    }
+  };
+
+  // Fetch tasks
+  const fetchTasks = async () => {
+    setIsLoading(true);
+    try {
+      // Simulate API delay
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      let filteredTasks = [...MOCK_TASKS];
+
+      // Apply filters
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase();
+        filteredTasks = filteredTasks.filter(
+          (task) =>
+            task.title.toLowerCase().includes(searchLower) ||
+            task.description?.toLowerCase().includes(searchLower) ||
+            task.project?.toLowerCase().includes(searchLower) ||
+            task.assignedTo.toLowerCase().includes(searchLower),
+        );
+      }
+
+      if (filters.title) {
+        filteredTasks = filteredTasks.filter((task) =>
+          task.title.toLowerCase().includes(filters.title.toLowerCase()),
+        );
+      }
+
+      if (filters.project) {
+        filteredTasks = filteredTasks.filter((task) =>
+          task.project?.toLowerCase().includes(filters.project.toLowerCase()),
+        );
+      }
+
+      if (filters.assignedTo !== "all") {
+        filteredTasks = filteredTasks.filter(
+          (task) => task.assignedTo === filters.assignedTo,
+        );
+      }
+
+      if (filters.status !== "all") {
+        filteredTasks = filteredTasks.filter(
+          (task) => task.status === filters.status,
+        );
+      }
+
+      if (filters.priority !== "all") {
+        filteredTasks = filteredTasks.filter(
+          (task) => task.priority === filters.priority,
+        );
+      }
+
+      if (filters.dueDate) {
+        filteredTasks = filteredTasks.filter((task) => {
+          const taskDate = parseISO(task.dueDate);
+          return (
+            taskDate.getDate() === filters.dueDate?.getDate() &&
+            taskDate.getMonth() === filters.dueDate?.getMonth() &&
+            taskDate.getFullYear() === filters.dueDate?.getFullYear()
+          );
+        });
+      }
+
+      // Apply sorting
+      if (sortConfig) {
+        filteredTasks.sort((a, b) => {
+          let aValue: any = a[sortConfig.key];
+          let bValue: any = b[sortConfig.key];
+
+          // Handle dates
+          if (
+            sortConfig.key === "dueDate" ||
+            sortConfig.key === "createdAt" ||
+            sortConfig.key === "updatedAt"
+          ) {
+            aValue = new Date(aValue).getTime();
+            bValue = new Date(bValue).getTime();
+          }
+
+          if (aValue < bValue) {
+            return sortConfig.direction === "asc" ? -1 : 1;
+          }
+          if (aValue > bValue) {
+            return sortConfig.direction === "asc" ? 1 : -1;
+          }
+          return 0;
+        });
+      }
+
+      // Pagination calculations
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      const paginatedTasks = filteredTasks.slice(startIndex, endIndex);
+
+      setTasks(paginatedTasks);
+      setTotalItems(filteredTasks.length);
+      setTotalPages(Math.ceil(filteredTasks.length / itemsPerPage));
+    } catch (error: any) {
+      console.error("Error fetching tasks:", error);
+      toast.error("Failed to fetch tasks", {
+        description: "Please try again later",
+      });
+      setTasks([]);
+      setTotalItems(0);
+      setTotalPages(1);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Initial fetch
+  useEffect(() => {
+    fetchTasks();
+  }, [currentPage, itemsPerPage, filters, sortConfig]);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    filters.search,
+    filters.title,
+    filters.project,
+    filters.assignedTo,
+    filters.status,
+    filters.priority,
+    filters.dueDate,
+    itemsPerPage,
+  ]);
+
+  // Handle filter changes for non-text fields
+  const handleFilterChange = (field: string, value: any) => {
+    setFilters((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  // Clear all filters
+  const clearFilters = () => {
+    setFilters({
+      search: "",
+      title: "",
+      assignedTo: "all",
+      status: "all",
+      priority: "all",
+      project: "",
+      dueDate: undefined,
+    });
+    setSearchInput("");
+    setTitleInput("");
+    setProjectInput("");
+    setDueDateInput("");
+    setSortConfig(null);
+  };
+
+  // Clear specific filter
+  const clearFilter = (filterName: keyof typeof filters) => {
+    setFilters((prev) => ({
+      ...prev,
+      [filterName]:
+        filterName === "assignedTo" ||
+        filterName === "status" ||
+        filterName === "priority"
+          ? "all"
+          : filterName === "dueDate"
+            ? undefined
+            : "",
+    }));
+
+    // Clear corresponding input state
+    switch (filterName) {
+      case "search":
+        setSearchInput("");
+        break;
+      case "title":
+        setTitleInput("");
+        break;
+      case "project":
+        setProjectInput("");
+        break;
+      case "dueDate":
+        setDueDateInput("");
+        break;
+    }
+  };
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // Handle sort
   const handleSort = (key: keyof Task) => {
     setSortConfig((current) => {
       if (current && current.key === key) {
@@ -847,441 +436,812 @@ export default function TaskManagement() {
     });
   };
 
-  const handleExportTasks = () => {
-    toast.info("Exporting tasks via Boltic...");
-    // Simulate Boltic automation for export
-    setTimeout(() => {
-      toast.success("Tasks exported successfully");
-    }, 2000);
+  // Calculate start and end index for display
+  const startIndex = (currentPage - 1) * itemsPerPage + 1;
+  const endIndex = Math.min(currentPage * itemsPerPage, totalItems);
+
+  // Handle Add Task
+  const handleAddTask = () => {
+    setEditingTask(null);
+    setIsModalOpen(true);
   };
 
-  const handleImportTasks = () => {
-    toast.info("Importing tasks via Boltic...");
-    // Simulate Boltic automation for import
-    setTimeout(() => {
-      toast.success("Tasks imported successfully");
-    }, 2000);
+  // Handle Edit Task
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setIsModalOpen(true);
   };
 
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.05,
-        delayChildren: 0.1,
-      },
-    },
+  // Handle Delete Task
+  const confirmDeleteTask = (task: Task) => {
+    setTaskToDelete(task);
+    setDeleteOpen(true);
   };
 
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: {
-        type: "spring" as const,
-        stiffness: 100,
-        damping: 12,
-      },
-    },
+  const handleDeleteTask = async () => {
+    if (taskToDelete) {
+      try {
+        // In a real app, call API here
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        setTasks(tasks.filter((task) => task.id !== taskToDelete.id));
+        toast.success("Task deleted successfully!");
+      } catch (error: any) {
+        toast.error("Failed to delete task", {
+          description: "Please try again",
+        });
+      } finally {
+        setTaskToDelete(null);
+        setDeleteOpen(false);
+      }
+    }
   };
 
-  // Show skeleton while loading
-  if (isLoading) {
-    return <TaskManagementSkeleton />;
-  }
+  // Handle Save Task
+  const handleSaveTask = async (data: any, id?: string) => {
+    setIsSubmitting(true);
+
+    try {
+      // Simulate API delay
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      if (id) {
+        // Update existing task
+        const updatedTask: Task = {
+          id,
+          ...data,
+          dueDate: data.dueDate
+            ? data.dueDate.toISOString()
+            : new Date().toISOString(),
+          assignedBy: "admin@example.com",
+          createdAt: editingTask?.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        setTasks(tasks.map((task) => (task.id === id ? updatedTask : task)));
+        toast.success("Task updated successfully!");
+      } else {
+        // Add new task
+        const newTask: Task = {
+          id: `task-${Date.now()}`,
+          ...data,
+          dueDate: data.dueDate
+            ? data.dueDate.toISOString()
+            : new Date().toISOString(),
+          assignedBy: "admin@example.com",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        setTasks([newTask, ...tasks]);
+        toast.success("Task created successfully!");
+      }
+
+      setIsModalOpen(false);
+    } catch (error: any) {
+      console.error("Error saving task:", error);
+      toast.error("Failed to save task", {
+        description: "Please try again",
+      });
+      throw error;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Refresh data
+  const handleRefresh = () => {
+    fetchTasks();
+    toast.info("Refreshing task data...");
+  };
+
+  // Active filters count
+  const activeFiltersCount =
+    Object.entries(filters).filter(
+      ([key, value]) =>
+        value &&
+        value !== "all" &&
+        !(value instanceof Date) &&
+        key !== "search",
+    ).length + (filters.dueDate ? 1 : 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4 md:p-6">
+    <>
       <motion.div
+        className="min-h-screen bg-background p-3"
         initial="hidden"
         animate="visible"
         variants={containerVariants}
-        className="max-w-7xl mx-auto space-y-6"
       >
-        {/* Header */}
-        <motion.div variants={itemVariants}>
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                Task Management
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-2">
-                Manage and track all your tasks in one place
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                onClick={handleRefresh}
-                disabled={isRefreshing}
-                className="flex items-center gap-2"
-              >
-                {isRefreshing ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-4 w-4" />
-                )}
-                Refresh
-              </Button>
-              <Button
-                onClick={() => setIsTaskFormOpen(true)}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
-              >
-                <Plus className="h-4 w-4" />
-                New Task
-              </Button>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Search */}
-        <motion.div variants={itemVariants}>
-          <Card>
-            <CardContent className="p-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Search tasks by title, description, assignee, or project..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
+        <div className="max-w-8xl mx-auto">
+          {/* Header */}
+          <motion.div
+            className="flex flex-col gap-6 mb-6 w-full"
+            variants={headerVariants}
+          >
+            <div className="flex justify-between gap-4">
+              {/* Title */}
+              <div>
+                <h1 className="text-3xl font-bold text-heading">
+                  Task Management
+                </h1>
+                <motion.p
+                  className="text-muted-foreground mt-1"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  Manage and track all your tasks in one place
+                </motion.p>
               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
 
-        {/* Filters */}
-        <motion.div variants={itemVariants}>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Filter className="h-5 w-5" />
-                Filters
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                  <Label htmlFor="status-filter">Status</Label>
-                  <Select
-                    value={filters.status || "all"}
-                    onValueChange={(value) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        status:
-                          value === "all"
-                            ? undefined
-                            : (value as Task["status"]),
-                      }))
-                    }
+              {/* Search Bar */}
+              <motion.div
+                className="relative w-100"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                <Search className="absolute left-3 top-6 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search tasks by title, description, assignee, or project..."
+                  className="pl-10 py-6 text-base"
+                  value={searchInput}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                />
+                {searchInput && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                    onClick={() => {
+                      setSearchInput("");
+                      handleFilterChange("search", "");
+                    }}
+                    disabled={isLoading}
                   >
-                    <SelectTrigger id="status-filter">
-                      <SelectValue placeholder="All Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="in-progress">In Progress</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="overdue">Overdue</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </motion.div>
 
-                <div>
-                  <Label htmlFor="priority-filter">Priority</Label>
-                  <Select
-                    value={filters.priority || "all"}
-                    onValueChange={(value) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        priority:
-                          value === "all"
-                            ? undefined
-                            : (value as Task["priority"]),
-                      }))
-                    }
-                  >
-                    <SelectTrigger id="priority-filter">
-                      <SelectValue placeholder="All Priority" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Priority</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="low">Low</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="assignee-filter">Assignee</Label>
-                  <Select
-                    value={filters.assignedTo || "all"}
-                    onValueChange={(value) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        assignedTo: value === "all" ? undefined : value,
-                      }))
-                    }
-                  >
-                    <SelectTrigger id="assignee-filter">
-                      <SelectValue placeholder="All Assignees" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Members</SelectItem>
-                      {MOCK_TEAM_MEMBERS.map((member) => (
-                        <SelectItem key={member.id} value={member.email}>
-                          {member.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex items-end">
+              {/* Action Buttons */}
+              <motion.div className="flex flex-wrap items-center gap-3">
+                <motion.div
+                  variants={buttonVariants}
+                  whileHover="hover"
+                  whileTap="tap"
+                >
                   <Button
                     variant="outline"
-                    onClick={() => setFilters({})}
-                    className="w-full"
+                    className="gap-2"
+                    onClick={handleRefresh}
+                    disabled={isLoading}
                   >
-                    Clear Filters
+                    <RefreshCw
+                      className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
+                    />
+                    Refresh
                   </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+                </motion.div>
 
-        {/* Tasks Table */}
-        <motion.div variants={itemVariants}>
-          <Card className="border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-            <CardHeader className="bg-gray-50 dark:bg-gray-800/50 border-b">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                  <CardTitle>All Tasks</CardTitle>
-                  <CardDescription>
-                    Showing {paginatedTasks.length} of{" "}
-                    {filteredAndSortedTasks.length} tasks
-                  </CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-500">Sort by:</span>
-                  <Select
-                    value={sortConfig?.key || "dueDate"}
-                    onValueChange={(value) => handleSort(value as keyof Task)}
+                <motion.div
+                  variants={buttonVariants}
+                  whileHover="hover"
+                  whileTap="tap"
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  <Button
+                    onClick={handleAddTask}
+                    className="gap-2 bg-primary hover:bg-primary/90"
+                    disabled={isLoading}
                   >
-                    <SelectTrigger className="w-[180px]">
-                      <ArrowUpDown className="h-4 w-4 mr-2" />
-                      <SelectValue placeholder="Sort by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="title">Title</SelectItem>
-                      <SelectItem value="dueDate">Due Date</SelectItem>
-                      <SelectItem value="status">Status</SelectItem>
-                      <SelectItem value="priority">Priority</SelectItem>
-                      <SelectItem value="createdAt">Created At</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[300px]">
-                        <Button
-                          variant="ghost"
-                          onClick={() => handleSort("title")}
-                          className="flex items-center gap-1 hover:bg-transparent p-0"
-                        >
-                          Title
-                          {sortConfig?.key === "title" &&
-                            (sortConfig.direction === "asc" ? (
-                              <ChevronUp className="h-4 w-4" />
-                            ) : (
-                              <ChevronDown className="h-4 w-4" />
-                            ))}
-                        </Button>
-                      </TableHead>
-                      <TableHead>
-                        <Button
-                          variant="ghost"
-                          onClick={() => handleSort("assignedTo")}
-                          className="flex items-center gap-1 hover:bg-transparent p-0"
-                        >
-                          Assigned To
-                          {sortConfig?.key === "assignedTo" &&
-                            (sortConfig.direction === "asc" ? (
-                              <ChevronUp className="h-4 w-4" />
-                            ) : (
-                              <ChevronDown className="h-4 w-4" />
-                            ))}
-                        </Button>
-                      </TableHead>
-                      <TableHead>
-                        <Button
-                          variant="ghost"
-                          onClick={() => handleSort("dueDate")}
-                          className="flex items-center gap-1 hover:bg-transparent p-0"
-                        >
-                          Due Date
-                          {sortConfig?.key === "dueDate" &&
-                            (sortConfig.direction === "asc" ? (
-                              <ChevronUp className="h-4 w-4" />
-                            ) : (
-                              <ChevronDown className="h-4 w-4" />
-                            ))}
-                        </Button>
-                      </TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Priority</TableHead>
-                      <TableHead>Project</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedTasks.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={7}
-                          className="text-center py-8 text-gray-500"
-                        >
-                          No tasks found. Try adjusting your filters or create a
-                          new task.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      paginatedTasks.map((task) => (
-                        <TableRow
-                          key={task.id}
-                          className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                          onClick={() => handleTaskClick(task)}
-                        >
-                          <TableCell>
-                            <div className="font-medium">{task.title}</div>
-                            {task.description && (
-                              <div className="text-sm text-gray-500 truncate max-w-xs">
-                                {task.description}
-                              </div>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-                                <User className="h-4 w-4" />
-                              </div>
-                              <span>{task.assignedTo.split("@")[0]}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Calendar className="h-4 w-4 text-gray-400" />
-                              {format(parseISO(task.dueDate), "MMM d, yyyy")}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <TaskStatusBadge status={task.status} />
-                          </TableCell>
-                          <TableCell>
-                            <PriorityBadge priority={task.priority} />
-                          </TableCell>
-                          <TableCell>
-                            {task.project ? (
-                              <Badge variant="outline">{task.project}</Badge>
-                            ) : (
-                              <span className="text-gray-400">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger
-                                asChild
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <Button variant="ghost" size="icon">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuItem
-                                  onClick={() => handleTaskClick(task)}
-                                >
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  View Details
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleEditTask(task);
-                                  }}
-                                >
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Edit Task
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  className="text-red-600"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteTask(task.id);
-                                  }}
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Delete Task
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+                    <Plus className="h-4 w-4" />
+                    New Task
+                  </Button>
+                </motion.div>
+              </motion.div>
+            </div>
+          </motion.div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
+          {/* Filter Section */}
+          <motion.div className="mb-2" variants={itemVariants}>
+            <Card className="overflow-hidden">
+              <CardContent className="">
+                <div className="flex flex-col gap-4">
+                  {/* Filter Header */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Filter className="h-5 w-5 text-muted-foreground" />
+                      <h3 className="font-semibold">Filters</h3>
+                      {activeFiltersCount > 0 && (
+                        <Badge variant="secondary" className="ml-2">
+                          {activeFiltersCount} active
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {activeFiltersCount > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={clearFilters}
+                          className="h-8 text-muted-foreground"
+                          disabled={isLoading}
+                        >
+                          Clear all
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowFilters(!showFilters)}
+                        className="h-8"
+                        disabled={isLoading}
+                      >
+                        {showFilters ? "Hide" : "Show"} Filters
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Filter Controls */}
+                  <AnimatePresence>
+                    {showFilters && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t">
+                          {/* Title Filter */}
+                          <div className="space-y-2">
+                            <Label
+                              htmlFor="title"
+                              className="text-sm font-medium"
+                            >
+                              Title
+                            </Label>
+                            <div className="flex gap-2">
+                              <Input
+                                id="title"
+                                placeholder="Enter task title"
+                                value={titleInput}
+                                onChange={(e) =>
+                                  handleTitleChange(e.target.value)
+                                }
+                                className="flex-1"
+                              />
+                              {titleInput && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-10 w-10"
+                                  onClick={() => {
+                                    setTitleInput("");
+                                    clearFilter("title");
+                                  }}
+                                  disabled={isLoading}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Project Filter */}
+                          <div className="space-y-2">
+                            <Label
+                              htmlFor="project"
+                              className="text-sm font-medium"
+                            >
+                              Project
+                            </Label>
+                            <div className="flex gap-2">
+                              <Input
+                                id="project"
+                                placeholder="Enter project name"
+                                value={projectInput}
+                                onChange={(e) =>
+                                  handleProjectChange(e.target.value)
+                                }
+                                className="flex-1"
+                              />
+                              {projectInput && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-10 w-10"
+                                  onClick={() => {
+                                    setProjectInput("");
+                                    clearFilter("project");
+                                  }}
+                                  disabled={isLoading}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Assignee Filter */}
+                          <div className="space-y-2">
+                            <Label
+                              htmlFor="assignedTo"
+                              className="text-sm font-medium"
+                            >
+                              Assignee
+                            </Label>
+                            <Select
+                              value={filters.assignedTo}
+                              onValueChange={(value) =>
+                                handleFilterChange("assignedTo", value)
+                              }
+                              disabled={isLoading}
+                            >
+                              <SelectTrigger id="assignedTo">
+                                <SelectValue placeholder="Select assignee" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">
+                                  All Assignees
+                                </SelectItem>
+                                {MOCK_TEAM_MEMBERS.map((member) => (
+                                  <SelectItem
+                                    key={member.id}
+                                    value={member.email}
+                                  >
+                                    {member.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {/* Status Filter */}
+                          <div className="space-y-2">
+                            <Label
+                              htmlFor="status"
+                              className="text-sm font-medium"
+                            >
+                              Status
+                            </Label>
+                            <Select
+                              value={filters.status}
+                              onValueChange={(value) =>
+                                handleFilterChange("status", value)
+                              }
+                              disabled={isLoading}
+                            >
+                              <SelectTrigger id="status">
+                                <SelectValue placeholder="Select status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All Status</SelectItem>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="in-progress">
+                                  In Progress
+                                </SelectItem>
+                                <SelectItem value="completed">
+                                  Completed
+                                </SelectItem>
+                                <SelectItem value="overdue">Overdue</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {/* Priority Filter */}
+                          <div className="space-y-2">
+                            <Label
+                              htmlFor="priority"
+                              className="text-sm font-medium"
+                            >
+                              Priority
+                            </Label>
+                            <Select
+                              value={filters.priority}
+                              onValueChange={(value) =>
+                                handleFilterChange("priority", value)
+                              }
+                              disabled={isLoading}
+                            >
+                              <SelectTrigger id="priority">
+                                <SelectValue placeholder="Select priority" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">
+                                  All Priority
+                                </SelectItem>
+                                <SelectItem value="low">Low</SelectItem>
+                                <SelectItem value="medium">Medium</SelectItem>
+                                <SelectItem value="high">High</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {/* Due Date */}
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">
+                              Due Date
+                            </Label>
+                            <div className="flex gap-2">
+                              <div className="relative flex-1">
+                                <Input
+                                  value={dueDateInput}
+                                  onChange={(e) =>
+                                    handleDueDateInputChange(e.target.value)
+                                  }
+                                  placeholder="dd/mm/yyyy or select"
+                                  className="pr-10"
+                                />
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="absolute right-0 top-0 h-full w-10 hover:bg-transparent"
+                                    >
+                                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent
+                                    className="w-auto p-0"
+                                    align="end"
+                                  >
+                                    <CalendarComponent
+                                      mode="single"
+                                      selected={filters.dueDate}
+                                      onSelect={handleDueDateSelect}
+                                      initialFocus
+                                    />
+                                  </PopoverContent>
+                                </Popover>
+                              </div>
+                              {dueDateInput && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-10 w-10"
+                                  onClick={() => {
+                                    setDueDateInput("");
+                                    clearFilter("dueDate");
+                                  }}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Results Count */}
+          <motion.div
+            className="flex justify-between items-center mb-4"
+            variants={itemVariants}
+          >
+            <p className="text-sm text-muted-foreground">
+              Showing {startIndex} to {endIndex} of {totalItems} tasks
+              {activeFiltersCount > 0 && " (filtered)"}
+            </p>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <div className="text-sm text-muted-foreground">
+                  Items per page:
+                </div>
+                <Select
+                  value={itemsPerPage.toString()}
+                  onValueChange={(value) => setItemsPerPage(Number(value))}
+                  disabled={isLoading}
+                >
+                  <SelectTrigger className="w-20">
+                    <SelectValue placeholder="10" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5</SelectItem>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Tasks Table */}
           <motion.div variants={itemVariants}>
-            <div className="flex justify-center">
+            <Card className="mb-6 overflow-hidden">
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-secondary/50">
+                        <TableHead
+                          className="font-semibold cursor-pointer"
+                          onClick={() => handleSort("title")}
+                        >
+                          <div className="flex items-center gap-1">
+                            Title
+                            {sortConfig?.key === "title" &&
+                              (sortConfig.direction === "asc" ? (
+                                <ChevronUp className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              ))}
+                          </div>
+                        </TableHead>
+                        <TableHead className="font-semibold">
+                          Description
+                        </TableHead>
+                        <TableHead className="font-semibold">
+                          Assigned Members
+                        </TableHead>
+                        <TableHead
+                          className="font-semibold cursor-pointer"
+                          onClick={() => handleSort("priority")}
+                        >
+                          <div className="flex items-center gap-1">
+                            Priority
+                            {sortConfig?.key === "priority" &&
+                              (sortConfig.direction === "asc" ? (
+                                <ChevronUp className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              ))}
+                          </div>
+                        </TableHead>
+                        <TableHead
+                          className="font-semibold cursor-pointer"
+                          onClick={() => handleSort("dueDate")}
+                        >
+                          <div className="flex items-center gap-1">
+                            Due Date
+                            {sortConfig?.key === "dueDate" &&
+                              (sortConfig.direction === "asc" ? (
+                                <ChevronUp className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              ))}
+                          </div>
+                        </TableHead>
+                        <TableHead className="font-semibold">Status</TableHead>
+                        <TableHead
+                          className="font-semibold cursor-pointer"
+                          onClick={() => handleSort("createdAt")}
+                        >
+                          <div className="flex items-center gap-1">
+                            Created & Updated
+                            {sortConfig?.key === "createdAt" &&
+                              (sortConfig.direction === "asc" ? (
+                                <ChevronUp className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              ))}
+                          </div>
+                        </TableHead>
+                        <TableHead className="font-semibold">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <AnimatePresence mode="wait">
+                        {isLoading ? (
+                          <motion.tr
+                            key="loading"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                          >
+                            <TableCell
+                              colSpan={8}
+                              className="text-center py-12"
+                            >
+                              <div className="flex flex-col items-center justify-center">
+                                <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground mb-2" />
+                                <p className="text-muted-foreground">
+                                  Loading tasks...
+                                </p>
+                              </div>
+                            </TableCell>
+                          </motion.tr>
+                        ) : tasks.length === 0 ? (
+                          <motion.tr
+                            key="no-data"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                          >
+                            <TableCell
+                              colSpan={8}
+                              className="text-center py-8 text-muted-foreground"
+                            >
+                              <motion.div
+                                className="flex flex-col items-center justify-center"
+                                initial={{ scale: 0.9, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ delay: 0.1 }}
+                              >
+                                <Clock className="h-12 w-12 text-muted-foreground/50 mb-2" />
+                                <p>No tasks found matching your filters.</p>
+                                <motion.div
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.95 }}
+                                >
+                                  <Button
+                                    variant="link"
+                                    onClick={clearFilters}
+                                    className="mt-2"
+                                  >
+                                    Clear all filters
+                                  </Button>
+                                </motion.div>
+                              </motion.div>
+                            </TableCell>
+                          </motion.tr>
+                        ) : (
+                          tasks.map((task, index) => (
+                            <motion.tr
+                              key={task.id}
+                              custom={index}
+                              initial="hidden"
+                              animate="visible"
+                              whileHover="hover"
+                              variants={rowVariants}
+                              className="group border-1"
+                              layout
+                              transition={{
+                                layout: { duration: 0.3 },
+                              }}
+                            >
+                              <TableCell className="group-hover:bg-secondary/30 cursor-pointer">
+                                <div className="flex items-center gap-3">
+                                  <div className="h-10 w-10 rounded-md bg-secondary flex items-center justify-center">
+                                    <Clock className="h-5 w-5 text-muted-foreground" />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">{task.title}</p>
+                                    {task.project && (
+                                      <p className="text-xs text-muted-foreground">
+                                        {task.project}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell className="group-hover:bg-secondary/30 cursor-pointer max-w-xs">
+                                <div className="line-clamp-2 text-sm">
+                                  {task.description || "No description"}
+                                </div>
+                              </TableCell>
+                              <TableCell className="group-hover:bg-secondary/30 cursor-pointer">
+                                <div className="flex items-center gap-2">
+                                  <User className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-sm">
+                                    {MOCK_TEAM_MEMBERS.find(
+                                      (m) => m.email === task.assignedTo,
+                                    )?.name || task.assignedTo}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="group-hover:bg-secondary/30 cursor-pointer">
+                                <PriorityBadge priority={task.priority} />
+                              </TableCell>
+                              <TableCell className="group-hover:bg-secondary/30 cursor-pointer">
+                                <div className="flex items-center gap-2">
+                                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-sm">
+                                    {formatDateShort(task.dueDate)}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="group-hover:bg-secondary/30 cursor-pointer">
+                                <TaskStatusBadge status={task.status} />
+                              </TableCell>
+                              <TableCell className="group-hover:bg-secondary/30 cursor-pointer">
+                                <div className="space-y-1">
+                                  <div className="flex items-center">
+                                    <span className="text-xs font-medium text-green-400">
+                                      Created:
+                                    </span>
+                                    <p className="text-xs text-muted-foreground ml-1">
+                                      {formatDateTime(task.createdAt)}
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center">
+                                    <span className="text-xs font-medium text-orange-400">
+                                      Updated:
+                                    </span>
+                                    <p className="text-xs text-muted-foreground ml-1">
+                                      {formatDateTime(task.updatedAt)}
+                                    </p>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell className="group-hover:bg-secondary/30">
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleEditTask(task)}
+                                    className="h-8 w-8 hover:bg-blue-100"
+                                    disabled={isLoading}
+                                  >
+                                    <Edit className="h-4 w-4 text-blue-600" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => confirmDeleteTask(task)}
+                                    className="h-8 w-8 hover:bg-red-100"
+                                    disabled={isLoading}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-red-600" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </motion.tr>
+                          ))
+                        )}
+                      </AnimatePresence>
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Custom Pagination */}
+          {!isLoading && tasks.length > 0 && totalPages > 1 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
               <CustomPagination
                 currentPage={currentPage}
                 totalPages={totalPages}
-                onPageChange={setCurrentPage}
+                onPageChange={handlePageChange}
               />
-            </div>
-          </motion.div>
-        )}
+            </motion.div>
+          )}
+        </div>
       </motion.div>
 
-      {/* Modals */}
-      <TaskDetailModal
-        task={selectedTask}
-        isOpen={isTaskModalOpen}
-        onClose={() => setIsTaskModalOpen(false)}
-        onDelete={handleDeleteTask}
-        onEdit={handleEditTask}
+      {/* Task Form Modal */}
+      <TaskFormModal
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        editingTask={editingTask}
+        onSave={handleSaveTask}
+        isSubmitting={isSubmitting}
+        teamMembers={MOCK_TEAM_MEMBERS}
       />
 
-      <TaskForm
-        isOpen={isTaskFormOpen}
-        onClose={() => {
-          setIsTaskFormOpen(false);
-          setEditingTask(undefined);
-        }}
-        onSubmit={handleSubmitTask}
-        initialData={editingTask}
+      {/* Delete Confirmation */}
+      <CustomAlert
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        mainText="Delete Task"
+        subText={
+          taskToDelete
+            ? `Are you sure you want to delete "${taskToDelete.title}"? This action cannot be undone.`
+            : "This action cannot be undone."
+        }
+        nextButtonText="Delete"
+        cancelButtonText="Cancel"
+        onNext={handleDeleteTask}
+        variant="destructive"
+        showCancel={true}
+        className="sm:max-w-[425px]"
       />
-    </div>
+    </>
   );
 }
