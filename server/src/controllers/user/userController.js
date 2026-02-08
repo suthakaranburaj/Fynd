@@ -2,6 +2,7 @@ import User from "../../models/User.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { asyncHandler, sendResponse } from "../../utils/index.js";
+import { createMainNotification } from "../../utils/notificationHelpers.js";
 
 // Generate JWT Token
 const generateToken = (userId) => {
@@ -41,6 +42,35 @@ export const register = asyncHandler(async (req, res) => {
 
     // Prepare user data for response
     const userData = user.toObject();
+
+    // Create main notification for new user registration (only if organization exists)
+    if (organization && organization.trim()) {
+        try {
+            // Get the first admin user in the organization to be createdBy
+            // Or use the new user themselves if no admin exists
+            let createdByUserId = user._id;
+
+            // Try to find an admin in the same organization
+            const adminUser = await User.findOne({
+                organization: organization,
+            }).sort({ createdAt: 1 }); // Get the oldest admin
+
+            if (adminUser) {
+                createdByUserId = adminUser._id;
+            }
+
+            await createMainNotification(
+                "New User Registered",
+                `A new user ${fullName} has registered in your organization.`,
+                "good",
+                organization,
+                createdByUserId
+            );
+        } catch (error) {
+            console.error("Error creating notification for new user:", error);
+            // Don't fail registration if notification fails
+        }
+    }
 
     return sendResponse(
         res,

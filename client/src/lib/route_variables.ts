@@ -77,6 +77,13 @@ export const navItems: NavItem[] = [
   //   pages: "Home, Profile",
   // },
   {
+    icon:Bell,
+    label: "Notifications",
+    href: "/notifications",
+    id: "notifications",
+    pages: "Home, Notifications",
+  },
+  {
     icon: Settings,
     label: "Settings",
     href: "/settings",

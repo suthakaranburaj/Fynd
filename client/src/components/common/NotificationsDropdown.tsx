@@ -124,8 +124,8 @@ export function NotificationsDropdown() {
   const markAsRead = async (id: string) => {
     try {
       const response = await notificationService.markAsRead(id);
-
-      if (response.success) {
+      
+      if (response.status) {
         setNotifications((prev) =>
           prev.map((n) => (n.id === id ? { ...n, isSeen: true } : n)),
         );
@@ -143,8 +143,8 @@ export function NotificationsDropdown() {
   const markAllAsRead = async () => {
     try {
       const response = await notificationService.markAllAsRead();
-
-      if (response.success) {
+console.log(response, "fooweofhi");
+      if (response.status) {
         setNotifications((prev) => prev.map((n) => ({ ...n, isSeen: true })));
         setUnreadCount(0);
         updateUnreadCount(0);

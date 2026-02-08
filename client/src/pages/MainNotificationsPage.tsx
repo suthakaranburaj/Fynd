@@ -464,7 +464,7 @@ export default function MainNotificationsPage() {
         {/* Filter Section */}
         <motion.div className="mb-2" variants={itemVariants}>
           <Card className="overflow-hidden">
-            <CardContent className="p-4">
+            <CardContent className="">
               <div className="flex flex-col gap-4">
                 {/* Filter Header */}
                 <div className="flex items-center justify-between">
