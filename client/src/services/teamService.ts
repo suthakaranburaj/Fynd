@@ -7,6 +7,7 @@ import type {
   CompanyTeamFilters,
   CompanyTeamStatistics,
 } from "@/types/companyTeams";
+import { getApiErrorMessage } from "@/utils/apiErrorhelper";
 
 export const teamService = {
   // Get all teams with filters
@@ -41,8 +42,9 @@ export const teamService = {
       }
       throw new Error(response.data.message || "Failed to fetch teams");
     } catch (error) {
-      console.error("Error fetching teams:", error);
-      throw error;
+      const message = getApiErrorMessage(error);
+      console.error("Error fetching teams:", message);
+      throw new Error(message); // 👈 THIS is what UI will receive
     }
   },
 
@@ -56,8 +58,9 @@ export const teamService = {
       }
       throw new Error(response.data.message || "Failed to fetch team");
     } catch (error) {
-      console.error(`Error fetching team ${id}:`, error);
-      throw error;
+      const message = getApiErrorMessage(error);
+      console.error("Error fetching team:", message);
+      throw new Error(message); // 👈 THIS is what UI will receive
     }
   },
 
@@ -74,8 +77,9 @@ export const teamService = {
       }
       throw new Error(response.data.message || "Failed to create team");
     } catch (error) {
-      console.error("Error creating team:", error);
-      throw error;
+      const message = getApiErrorMessage(error);
+      console.error("Error creating team:", message);
+      throw new Error(message); // 👈 THIS is what UI will receive
     }
   },
 
@@ -95,8 +99,9 @@ export const teamService = {
       }
       throw new Error(response.data.message || "Failed to update team");
     } catch (error) {
-      console.error(`Error updating team ${id}:`, error);
-      throw error;
+      const message = getApiErrorMessage(error);
+      console.error("Error updating team:", message);
+      throw new Error(message); // 👈 THIS is what UI will receive
     }
   },
 
@@ -113,8 +118,9 @@ export const teamService = {
         throw new Error(response.data.message || "Failed to delete team");
       }
     } catch (error) {
-      console.error(`Error deleting team ${id}:`, error);
-      throw error;
+      const message = getApiErrorMessage(error);
+      console.error("Error deleting team:", message);
+      throw new Error(message); // 👈 THIS is what UI will receive
     }
   },
 
@@ -135,8 +141,9 @@ export const teamService = {
         response.data.message || "Failed to fetch team statistics",
       );
     } catch (error) {
-      console.error("Error fetching team statistics:", error);
-      throw error;
+      const message = getApiErrorMessage(error);
+      console.error("Error fetching team statistics:", message);
+      throw new Error(message); // 👈 THIS is what UI will receive
     }
   },
 

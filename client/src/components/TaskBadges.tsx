@@ -1,64 +1,65 @@
 import { Badge } from "@/components/ui/badge";
-import { Clock, CheckCircle, AlertCircle } from "lucide-react";
-import { type Task } from "../types/task.types";
+import {
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  PlayCircle,
+  XCircle,
+} from "lucide-react";
 
-// Task status badge component
-export const TaskStatusBadge = ({ status }: { status: Task["status"] }) => {
+export const TaskStatusBadge = ({ status }: { status: string }) => {
   const variants = {
-    pending: {
-      bg: "bg-yellow-100 dark:bg-yellow-900/30",
-      text: "text-yellow-800 dark:text-yellow-300",
-      icon: Clock,
-    },
-    "in-progress": {
-      bg: "bg-blue-100 dark:bg-blue-900/30",
-      text: "text-blue-800 dark:text-blue-300",
-      icon: Clock,
-    },
-    completed: {
-      bg: "bg-green-100 dark:bg-green-900/30",
-      text: "text-green-800 dark:text-green-300",
-      icon: CheckCircle,
-    },
-    overdue: {
-      bg: "bg-red-100 dark:bg-red-900/30",
-      text: "text-red-800 dark:text-red-300",
-      icon: AlertCircle,
-    },
+    pending: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100",
+    "in-progress": "bg-blue-100 text-blue-800 hover:bg-blue-100",
+    completed: "bg-green-100 text-green-800 hover:bg-green-100",
+    overdue: "bg-red-100 text-red-800 hover:bg-red-100",
+    cancelled: "bg-gray-100 text-gray-800 hover:bg-gray-100",
   };
 
-  const { bg, text, icon: Icon } = variants[status];
+  const icons = {
+    pending: <Clock className="h-3 w-3 mr-1" />,
+    "in-progress": <PlayCircle className="h-3 w-3 mr-1" />,
+    completed: <CheckCircle className="h-3 w-3 mr-1" />,
+    overdue: <AlertCircle className="h-3 w-3 mr-1" />,
+    cancelled: <XCircle className="h-3 w-3 mr-1" />,
+  };
+
+  const labels = {
+    pending: "Pending",
+    "in-progress": "In Progress",
+    completed: "Completed",
+    overdue: "Overdue",
+    cancelled: "Cancelled",
+  };
 
   return (
-    <Badge variant="secondary" className={`${bg} ${text} gap-1`}>
-      <Icon className="h-3 w-3" />
-      {status.charAt(0).toUpperCase() + status.slice(1)}
+    <Badge
+      className={`${variants[status as keyof typeof variants]} font-medium gap-1`}
+    >
+      {icons[status as keyof typeof icons]}
+      {labels[status as keyof typeof labels]}
     </Badge>
   );
 };
 
-// Priority badge component
-export const PriorityBadge = ({ priority }: { priority: Task["priority"] }) => {
+export const PriorityBadge = ({ priority }: { priority: string }) => {
   const variants = {
-    low: {
-      bg: "bg-green-100 dark:bg-green-900/30",
-      text: "text-green-800 dark:text-green-300",
-    },
-    medium: {
-      bg: "bg-yellow-100 dark:bg-yellow-900/30",
-      text: "text-yellow-800 dark:text-yellow-300",
-    },
-    high: {
-      bg: "bg-red-100 dark:bg-red-900/30",
-      text: "text-red-800 dark:text-red-300",
-    },
+    low: "bg-gray-100 text-gray-800 hover:bg-gray-100",
+    medium: "bg-blue-100 text-blue-800 hover:bg-blue-100",
+    high: "bg-red-100 text-red-800 hover:bg-red-100",
   };
 
-  const { bg, text } = variants[priority];
+  const labels = {
+    low: "Low",
+    medium: "Medium",
+    high: "High",
+  };
 
   return (
-    <Badge variant="secondary" className={`${bg} ${text}`}>
-      {priority.charAt(0).toUpperCase() + priority.slice(1)}
+    <Badge
+      className={`${variants[priority as keyof typeof variants]} font-medium`}
+    >
+      {labels[priority as keyof typeof labels]}
     </Badge>
   );
 };

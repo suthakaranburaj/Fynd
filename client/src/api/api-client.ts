@@ -60,6 +60,7 @@ class ApiClient {
     data?: any,
     config?: AxiosRequestConfig,
   ): Promise<AxiosResponse<T>> {
+    console.log("PUT request to:", url, "with data:", data);
     return this.client.put<T>(url, data, config);
   }
 

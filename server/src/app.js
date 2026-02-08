@@ -7,6 +7,7 @@ import settingsRoute from "./controllers/settings/settingsRoute.js"
 import companyMemberRoute from "./controllers/companyMember/companyMemberRoute.js";
 import teamRoutes from "./controllers/companyTeams/teamRoutes.js";
 import notificationRoute from "./controllers/notifications/notificationRoutes.js"
+import taskRoutes from "./controllers/task/taskRoutes.js";
 
 const app = express();
 
@@ -33,6 +34,8 @@ app.use(verifyJWT);
 app.use("/api/notifications", notificationRoute);
 app.use("/api/company-members", companyMemberRoute);
 app.use("/api/teams", teamRoutes);
+app.use("/api/tasks", taskRoutes);
+
 // backend route for OAuth callback
 app.get("/oauth2callback", (req, res) => {
     // This endpoint should redirect to the frontend callback page with the token
