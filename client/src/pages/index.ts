@@ -5,6 +5,7 @@ import ProductInventory from "./ProductInventory";
 import ProductForm from "./ProductForm";
 import MasterInventory from "./MasterInventory";
 import Purchase from "./Purchase";
+import Settings from "./Settings";
 export {
   Dashboard,
   Login,
@@ -13,4 +14,5 @@ export {
   ProductForm,
   MasterInventory,
   Purchase,
+  Settings
 };

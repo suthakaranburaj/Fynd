@@ -18,6 +18,7 @@ import {
   ProductForm,
   MasterInventory,
   Purchase,
+  Settings
 } from "./pages";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -122,6 +123,19 @@ function App() {
                       setIsExpanded={setIsExpanded}
                     >
                       <Purchase />
+                    </Navbar>
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <PrivateRoute>
+                    <Navbar
+                      isExpanded={isExpanded}
+                      setIsExpanded={setIsExpanded}
+                    >
+                      <Settings />
                     </Navbar>
                   </PrivateRoute>
                 }
