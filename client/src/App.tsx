@@ -16,7 +16,9 @@ import {
   Register,
   Calendar,
   Settings,
-  TaskManagement
+  TaskManagement,
+  CompanyMembers,
+  CompanyTeams
 } from "./pages";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -94,6 +96,32 @@ function App() {
                       setIsExpanded={setIsExpanded}
                     >
                       <TaskManagement />
+                    </Navbar>
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/company-teams"
+                element={
+                  <PrivateRoute>
+                    <Navbar
+                      isExpanded={isExpanded}
+                      setIsExpanded={setIsExpanded}
+                    >
+                      <CompanyTeams />
+                    </Navbar>
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/company-members"
+                element={
+                  <PrivateRoute>
+                    <Navbar
+                      isExpanded={isExpanded}
+                      setIsExpanded={setIsExpanded}
+                    >
+                      <CompanyMembers />
                     </Navbar>
                   </PrivateRoute>
                 }

@@ -8,6 +8,7 @@ import {
   User,
   Settings,
   type LucideIcon,
+  Building,
 } from "lucide-react";
 
 export interface NavItem {
@@ -41,11 +42,18 @@ export const navItems: NavItem[] = [
     pages: "Home, Tasks",
   },
   {
-    icon: Users,
-    label: "Team Members",
-    href: "/team",
-    id: "team",
-    pages: "Home, Team",
+    icon: User,
+    label: "Company Members",
+    href: "/company-members",
+    id: "company-members",
+    pages: "Home, Company, Members",
+  },
+  {
+    icon: Building,
+    label: "Company Teams",
+    href: "/company-teams",
+    id: "company-teams",
+    pages: "Home, Company, Teams",
   },
   {
     icon: MessageSquare,
