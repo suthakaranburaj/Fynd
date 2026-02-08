@@ -19,7 +19,7 @@ export const settingsService = {
         data: { settings: NotificationSettings };
         message: string;
       }>("/users/settings");
-
+      console.log("API Response:", response);
       if (response.data.success) {
         return response.data.data.settings;
       }

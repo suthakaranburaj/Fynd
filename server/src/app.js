@@ -4,6 +4,8 @@ import cookieParser from "cookie-parser";
 import userRoute  from "./controllers/user/userRoutes.js";
 import { verifyJWT } from "./middlewares/auth.middleware.js";
 import settingsRoute from "./controllers/settings/settingsRoute.js"
+import companyMemberRoute from "./controllers/companyMember/companyMemberRoute.js";
+
 const app = express();
 
 app.use(
@@ -26,7 +28,7 @@ app.use(cookieParser());
 app.use("/api/auth", userRoute);
 app.use("/api/users", settingsRoute);
 app.use(verifyJWT);
-
+app.use("/api/company-members", companyMemberRoute);
 
 // backend route for OAuth callback
 app.get("/oauth2callback", (req, res) => {

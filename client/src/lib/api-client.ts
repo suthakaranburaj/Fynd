@@ -104,6 +104,7 @@ class ApiClient {
         url,
         config,
       );
+      console.log("GET Response:", response);
       return response.data.data;
     } catch (error) {
       throw error;
