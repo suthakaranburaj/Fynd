@@ -3,6 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import userRoute  from "./controllers/user/userRoutes.js";
 import { verifyJWT } from "./middlewares/auth.middleware.js";
+import settingsRoute from "./controllers/settings/settingsRoute.js"
 const app = express();
 
 app.use(
@@ -23,7 +24,7 @@ app.use(express.static("public"));
 app.use(cookieParser());
 
 app.use("/api/auth", userRoute);
-
+app.use("/api/users", settingsRoute);
 app.use(verifyJWT);
 
 

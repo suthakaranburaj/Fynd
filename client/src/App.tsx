@@ -14,11 +14,9 @@ import {
   Dashboard,
   Login,
   Register,
-  ProductInventory,
-  ProductForm,
-  MasterInventory,
-  Purchase,
-  Settings
+  Calendar,
+  Settings,
+  TaskManagement
 } from "./pages";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -62,72 +60,6 @@ function App() {
                 }
               />
               <Route
-                path="/product-inventory"
-                element={
-                  <PrivateRoute>
-                    <Navbar
-                      isExpanded={isExpanded}
-                      setIsExpanded={setIsExpanded}
-                    >
-                      <ProductInventory />
-                    </Navbar>
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/product-inventory/new"
-                element={
-                  <PrivateRoute>
-                    <Navbar
-                      isExpanded={isExpanded}
-                      setIsExpanded={setIsExpanded}
-                    >
-                      <ProductForm isEditMode={false} />
-                    </Navbar>
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/product-inventory/:productId"
-                element={
-                  <PrivateRoute>
-                    <Navbar
-                      isExpanded={isExpanded}
-                      setIsExpanded={setIsExpanded}
-                    >
-                      <ProductForm isEditMode={true} />
-                    </Navbar>
-                  </PrivateRoute>
-                }
-              />
-              // In your App.tsx routes, update the product inventory route:
-              <Route
-                path="/master"
-                element={
-                  <PrivateRoute>
-                    <Navbar
-                      isExpanded={isExpanded}
-                      setIsExpanded={setIsExpanded}
-                    >
-                      <MasterInventory />
-                    </Navbar>
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/purchases"
-                element={
-                  <PrivateRoute>
-                    <Navbar
-                      isExpanded={isExpanded}
-                      setIsExpanded={setIsExpanded}
-                    >
-                      <Purchase />
-                    </Navbar>
-                  </PrivateRoute>
-                }
-              />
-              <Route
                 path="/settings"
                 element={
                   <PrivateRoute>
@@ -136,6 +68,32 @@ function App() {
                       setIsExpanded={setIsExpanded}
                     >
                       <Settings />
+                    </Navbar>
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/calendar"
+                element={
+                  <PrivateRoute>
+                    <Navbar
+                      isExpanded={isExpanded}
+                      setIsExpanded={setIsExpanded}
+                    >
+                      <Calendar />
+                    </Navbar>
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/tasks"
+                element={
+                  <PrivateRoute>
+                    <Navbar
+                      isExpanded={isExpanded}
+                      setIsExpanded={setIsExpanded}
+                    >
+                      <TaskManagement />
                     </Navbar>
                   </PrivateRoute>
                 }

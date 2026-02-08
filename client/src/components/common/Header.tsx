@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 // import { NotificationsDropdown } from "../Notifications/NotificationsDropdown";
 import { useNavigate } from "react-router-dom";
 // import { useTheme } from "../../contexts/ThemeProvider";
-
+import { useAuth } from "@/contexts/AuthContext";
 // Define types
 interface TimeState {
   date: string;
@@ -16,7 +16,7 @@ interface TimeState {
 }
 
 interface UserData {
-  name?: string;
+  fullName?: string;
   email?: string;
   gmail?: string;
 }
@@ -33,7 +33,7 @@ interface HeaderProps {
 
 export function Header({ isExpanded, pages }: HeaderProps) {
   const [time, setTime] = useState<TimeState | null>(null);
-  const [user, setUser] = useState<UserData | null>(null);
+  const { user } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
   const navigate = useNavigate();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -41,15 +41,6 @@ export function Header({ isExpanded, pages }: HeaderProps) {
 
   useEffect(() => {
     // Get user from localStorage
-    const userData = localStorage.getItem("User");
-    if (userData) {
-      try {
-        const parsedUser: UserData = JSON.parse(userData);
-        setUser(parsedUser);
-      } catch (error) {
-        console.error("Error parsing user data:", error);
-      }
-    }
 
     const updateTime = () => {
       const now = new Date();
@@ -123,7 +114,7 @@ export function Header({ isExpanded, pages }: HeaderProps) {
 
   const handleLogout = () => {
     localStorage.removeItem("User");
-    setUser(null);
+    // setUser(null);
     setShowDropdown(false);
     navigate("/login");
   };
@@ -255,7 +246,7 @@ export function Header({ isExpanded, pages }: HeaderProps) {
           >
             <AvatarImage src="/profile.jpg" alt="@user" />
             <AvatarFallback className="text-sm font-medium text-sidebar-foreground bg-sidebar-accent">
-              {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+              {user?.fullName ? user.fullName.charAt(0).toUpperCase() : "U"}
             </AvatarFallback>
           </Avatar>
 
@@ -264,10 +255,10 @@ export function Header({ isExpanded, pages }: HeaderProps) {
             <div className="absolute right-0 top-full mt-2 w-48 bg-sidebar border border-sidebar-border rounded-lg shadow-lg z-50">
               <div className="p-3 border-b border-sidebar-border">
                 <p className="font-medium text-sidebar-foreground">
-                  {user?.name || "User"}
+                  {user?.fullName || "User"}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {user?.email || user?.gmail || "user@example.com"}
+                  {user?.email || user?.email || "user@example.com"}
                 </p>
               </div>
               <div className="p-1">

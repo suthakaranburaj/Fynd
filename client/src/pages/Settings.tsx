@@ -24,6 +24,63 @@ interface SettingsData {
   notifications: NotificationSettings;
 }
 
+// Skeleton loading component
+const SettingsSkeleton = () => {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4 md:p-6">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Header Skeleton */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="space-y-3">
+              <div className="h-8 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+              <div className="h-4 w-64 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+            </div>
+            <div className="h-6 w-32 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
+          </div>
+          <Separator />
+        </div>
+
+        {/* Card Skeleton */}
+        <Card className="border border-gray-200 dark:border-gray-700 shadow-sm">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 animate-pulse">
+                <div className="w-5 h-5"></div>
+              </div>
+              <div className="space-y-2">
+                <div className="h-6 w-40 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                <div className="h-4 w-56 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Setting items skeleton */}
+            {[1, 2, 3].map((item) => (
+              <div key={item} className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                  <div className="space-y-2">
+                    <div className="h-5 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                    <div className="h-4 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                  </div>
+                </div>
+                <div className="w-10 h-6 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* Action Buttons Skeleton */}
+        <div className="flex flex-col sm:flex-row gap-3 justify-end pt-4">
+          <div className="h-10 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+          <div className="h-10 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function Settings() {
   const [settings, setSettings] = useState<SettingsData>({
     notifications: {
@@ -163,16 +220,7 @@ export default function Settings() {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4 md:p-6 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-600" />
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Loading settings...
-          </p>
-        </div>
-      </div>
-    );
+    return <SettingsSkeleton />;
   }
 
   return (

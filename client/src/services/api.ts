@@ -19,6 +19,7 @@ api.interceptors.request.use((config) => {
 });
 
 export interface User {
+  fullName: any;
   id: number;
   username: string;
   email: string;
