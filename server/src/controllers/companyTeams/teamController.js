@@ -312,11 +312,12 @@ export const updateTeam = asyncHandler(async (req, res) => {
         }
 
         // Notify all members about team update
-        await createUserNotification(
+        console.log("Notifying all members about team update");
+        await createMainNotification(
             "Team Updated",
             `The team "${team.teamName}" has been updated.`,
-            members,
             "normal",
+            currentUser.organization,
             currentUser._id
         );
     } else {

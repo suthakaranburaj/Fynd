@@ -5,7 +5,11 @@ import { statusType } from "../utils/statusType.js";
 import User from "../models/User.js";
 
 export const verifyJWT = asyncHandler(async (req, res, next) => {
-    const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "");
+    // Check token from multiple sources
+    const token =
+        req.cookies?.accessToken ||
+        req.header("Authorization")?.replace("Bearer ", "") ||
+        req.query?.token; // Added query parameter support
 
     if (!token) {
         return sendResponse(
@@ -20,7 +24,6 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
     try {
         const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
-        // Use 'userId' as in your generateToken function
         const user = await User.findById(decodedToken?.userId).select("-password");
 
         if (!user) {

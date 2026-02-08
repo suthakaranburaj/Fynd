@@ -6,6 +6,7 @@ import { verifyJWT } from "./middlewares/auth.middleware.js";
 import settingsRoute from "./controllers/settings/settingsRoute.js"
 import companyMemberRoute from "./controllers/companyMember/companyMemberRoute.js";
 import teamRoutes from "./controllers/companyTeams/teamRoutes.js";
+import notificationRoute from "./controllers/notifications/notificationRoutes.js"
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use(cookieParser());
 app.use("/api/auth", userRoute);
 app.use("/api/users", settingsRoute);
 app.use(verifyJWT);
+app.use("/api/notifications", notificationRoute);
 app.use("/api/company-members", companyMemberRoute);
 app.use("/api/teams", teamRoutes);
 // backend route for OAuth callback

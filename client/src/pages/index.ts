@@ -6,7 +6,7 @@ import Calendar from "./calender";
 import TaskManagement from "./task_management";
 import CompanyMembers from "./CompanyMembers";
 import CompanyTeams from "./CompanyTeams";
-
+import MainNotification from "./MainNotificationsPage"
 export {
   Dashboard,
   Login,
@@ -16,4 +16,5 @@ export {
   TaskManagement,
   CompanyMembers,
   CompanyTeams,
+  MainNotification
 };

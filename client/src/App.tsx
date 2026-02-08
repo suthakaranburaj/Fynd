@@ -18,7 +18,8 @@ import {
   Settings,
   TaskManagement,
   CompanyMembers,
-  CompanyTeams
+  CompanyTeams,
+  MainNotification
 } from "./pages";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -122,6 +123,19 @@ function App() {
                       setIsExpanded={setIsExpanded}
                     >
                       <CompanyMembers />
+                    </Navbar>
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/notifications"
+                element={
+                  <PrivateRoute>
+                    <Navbar
+                      isExpanded={isExpanded}
+                      setIsExpanded={setIsExpanded}
+                    >
+                      <MainNotification />
                     </Navbar>
                   </PrivateRoute>
                 }
