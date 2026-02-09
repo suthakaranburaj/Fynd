@@ -8,6 +8,8 @@ import companyMemberRoute from "./controllers/companyMember/companyMemberRoute.j
 import teamRoutes from "./controllers/companyTeams/teamRoutes.js";
 import notificationRoute from "./controllers/notifications/notificationRoutes.js"
 import taskRoutes from "./controllers/task/taskRoutes.js";
+import { setupReminderCronJob } from "./cron/reminderCron.js";
+import reminderRoutes from "./controllers/reminder/reminderRoutes.js";
 
 const app = express();
 
@@ -28,6 +30,8 @@ app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use(express.static("public"));
 app.use(cookieParser());
 
+setupReminderCronJob();
+
 app.use("/api/auth", userRoute);
 app.use("/api/users", settingsRoute);
 app.use(verifyJWT);
@@ -35,6 +39,7 @@ app.use("/api/notifications", notificationRoute);
 app.use("/api/company-members", companyMemberRoute);
 app.use("/api/teams", teamRoutes);
 app.use("/api/tasks", taskRoutes);
+app.use("/api/reminders", reminderRoutes);
 
 // backend route for OAuth callback
 app.get("/oauth2callback", (req, res) => {

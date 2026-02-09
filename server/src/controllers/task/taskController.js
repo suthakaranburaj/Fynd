@@ -1,10 +1,12 @@
 import Task from "../../models/Task.js";
 import User from "../../models/User.js";
 import Team from "../../models/Team.js";
+import Reminder from "../../models/Reminder.js";
 import { TeamMember } from "../../models/Team.js";
 import { asyncHandler, sendResponse } from "../../utils/index.js";
 import mongoose from "mongoose";
 import { createUserNotification } from "../../utils/notificationHelpers.js";
+import { createTaskReminders } from "../reminder/reminderController.js";
 
 /**
  * @desc    Create a new task
@@ -138,6 +140,9 @@ export const createTask = asyncHandler(async (req, res) => {
         })
         .lean();
 
+    // Create reminders for the task (7, 3, 1, 0 days before due date)
+    await createTaskReminders(task, currentUser);
+
     // Create notification for assigned user
     if (assignedToId && assignedToId.toString() !== currentUser._id.toString()) {
         await createUserNotification(
@@ -153,10 +158,9 @@ export const createTask = asyncHandler(async (req, res) => {
     if (teamId && !assignedToId) {
         const teamMembers = await TeamMember.find({
             team: teamId,
-            isActive: true,
-            // user: { $ne: currentUser._id }
+            isActive: true
         }).select("user");
-        // console.log("Team members to notify:", teamMembers);
+
         if (teamMembers.length > 0) {
             const memberIds = teamMembers.map((member) => member.user);
             await createUserNotification(
@@ -631,11 +635,12 @@ export const updateTask = asyncHandler(async (req, res) => {
     const oldAssignedTo = task.assignedTo?.toString();
     const oldStatus = task.status;
     const oldDueDate = task.dueDate;
+    const dueDateObj = dueDate ? new Date(dueDate) : task.dueDate;
 
     // Update task fields
     if (title !== undefined) task.title = title.trim();
     if (description !== undefined) task.description = description?.trim() || "";
-    if (dueDate !== undefined) task.dueDate = new Date(dueDate);
+    if (dueDate !== undefined) task.dueDate = dueDateObj;
     if (priority !== undefined) task.priority = priority;
     if (tags !== undefined) task.tags = tags.filter((tag) => tag?.trim());
     if (project !== undefined) task.project = project?.trim() || "";
@@ -740,6 +745,23 @@ export const updateTask = asyncHandler(async (req, res) => {
     task.updatedAt = new Date();
     await task.save();
 
+    // Handle reminders when due date changes
+    if (dueDate !== undefined && oldDueDate && dueDateObj.toString() !== oldDueDate.toString()) {
+        // Delete old reminders for this task
+        await Reminder.updateMany(
+            {
+                task: task._id,
+                isDeleted: false
+            },
+            {
+                $set: { isDeleted: true }
+            }
+        );
+
+        // Create new reminders for the updated due date
+        await createTaskReminders(task, currentUser);
+    }
+
     // Create notifications for significant changes
     if (assignedTo !== undefined && assignedTo && assignedTo !== oldAssignedTo) {
         await createUserNotification(
@@ -753,31 +775,31 @@ export const updateTask = asyncHandler(async (req, res) => {
 
     if (status !== undefined && status !== oldStatus) {
         let notificationUsers = [];
-        
+
         // Add task creator
         if (task.assignedBy && task.assignedBy.toString() !== currentUser._id.toString()) {
             notificationUsers.push(task.assignedBy);
         }
-        
+
         // Add assigned user if exists and not the current user
         if (task.assignedTo && task.assignedTo.toString() !== currentUser._id.toString()) {
             notificationUsers.push(task.assignedTo);
         }
-        
+
         // If task is assigned to team (and no specific user), notify all team members
-        if (task.assignedToType === 'team' && !task.assignedTo && task.team) {
+        if (task.assignedToType === "team" && !task.assignedTo && task.team) {
             const teamMembers = await TeamMember.find({
                 team: task.team,
                 isActive: true,
                 user: { $ne: currentUser._id } // Exclude current user
             }).select("user");
-            
+
             if (teamMembers.length > 0) {
                 const teamMemberIds = teamMembers.map((member) => member.user);
                 notificationUsers.push(...teamMemberIds);
             }
         }
-        
+
         // Remove duplicates and null/undefined values
         const uniqueUsers = notificationUsers.filter(
             (id, index, self) =>
@@ -872,37 +894,47 @@ export const deleteTask = asyncHandler(async (req, res) => {
         );
     }
 
-    // Soft delete
+    // Soft delete the task
     task.isDeleted = true;
     task.updatedAt = new Date();
     await task.save();
 
+    // Also delete associated reminders
+    await Reminder.updateMany(
+        {
+            task: task._id,
+            isDeleted: false
+        },
+        {
+            $set: { isDeleted: true }
+        }
+    );
+
     // Notify about deletion
     let notificationUsers = [];
-    
+
     // Notify assigned user if exists and not the current user
     if (task.assignedTo && task.assignedTo.toString() !== currentUser._id.toString()) {
         notificationUsers.push(task.assignedTo);
     }
-    
+
     // If task is assigned to team (and no specific user), notify all team members
-    if (task.assignedToType === 'team' && !task.assignedTo && task.team) {
+    if (task.assignedToType === "team" && !task.assignedTo && task.team) {
         const teamMembers = await TeamMember.find({
             team: task.team,
             isActive: true,
             user: { $ne: currentUser._id } // Exclude current user
         }).select("user");
-        
+
         if (teamMembers.length > 0) {
             const teamMemberIds = teamMembers.map((member) => member.user);
             notificationUsers.push(...teamMemberIds);
         }
     }
-    
+
     // Remove duplicates
     const uniqueUsers = notificationUsers.filter(
-        (id, index, self) =>
-            id && self.findIndex((t) => t?.toString() === id?.toString()) === index
+        (id, index, self) => id && self.findIndex((t) => t?.toString() === id?.toString()) === index
     );
 
     if (uniqueUsers.length > 0) {

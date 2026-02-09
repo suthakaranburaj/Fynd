@@ -1,4 +1,5 @@
 export interface CompanyMember {
+  avatar: any;
   id: string;
   name: string;
   fullName: string;

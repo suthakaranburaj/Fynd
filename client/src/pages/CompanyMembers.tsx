@@ -216,6 +216,18 @@ export default function CompanyMembers() {
     }
   };
 
+  // Generate avatar URL based on member name (like Reminders component)
+  const getAvatarUrl = (member: CompanyMember) => {
+    // If member has an avatar property, use it
+    if (member.avatar) {
+      return member.avatar;
+    }
+    // Otherwise generate one using DiceBear API with the member's name as seed
+    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(
+      member.name || member.fullName || member.email || "User",
+    )}`;
+  };
+
   // Fetch members from backend
   const fetchMembers = async () => {
     setIsLoading(true);
@@ -450,7 +462,7 @@ export default function CompanyMembers() {
         {/* Filter Section */}
         <motion.div className="mb-2" variants={itemVariants}>
           <Card className="overflow-hidden">
-            <CardContent className="p-4">
+            <CardContent className="">
               <div className="flex flex-col gap-4">
                 {/* Filter Header */}
                 <div className="flex items-center justify-between">
@@ -563,7 +575,10 @@ export default function CompanyMembers() {
                 value={itemsPerPage.toString()}
                 onValueChange={(value) => {
                   setItemsPerPage(Number(value));
-                  setFilters((prev: any) => ({ ...prev, limit: Number(value) }));
+                  setFilters((prev: any) => ({
+                    ...prev,
+                    limit: Number(value),
+                  }));
                 }}
                 disabled={isLoading}
               >
@@ -720,8 +735,38 @@ export default function CompanyMembers() {
                           >
                             <TableCell className="group-hover:bg-secondary/30 cursor-pointer">
                               <div className="flex items-center gap-3">
-                                <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center">
-                                  <User className="h-5 w-5 text-muted-foreground" />
+                                <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center overflow-hidden">
+                                  {member.avatar ? (
+                                    <img
+                                      src={member.avatar}
+                                      alt={member.name}
+                                      className="h-full w-full object-cover"
+                                    />
+                                  ) : (
+                                    <img
+                                      src={getAvatarUrl(member)}
+                                      alt={member.name}
+                                      className="h-full w-full object-cover"
+                                      onError={(e) => {
+                                        // Fallback to icon if image fails to load
+                                        e.currentTarget.style.display = "none";
+                                        const parent =
+                                          e.currentTarget.parentElement;
+                                        if (parent) {
+                                          const fallbackDiv =
+                                            document.createElement("div");
+                                          fallbackDiv.className =
+                                            "h-10 w-10 rounded-full bg-secondary flex items-center justify-center";
+                                          const icon =
+                                            document.createElement("div");
+                                          icon.innerHTML =
+                                            '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user h-5 w-5 text-muted-foreground"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
+                                          fallbackDiv.appendChild(icon);
+                                          parent.appendChild(fallbackDiv);
+                                        }
+                                      }}
+                                    />
+                                  )}
                                 </div>
                                 <div>
                                   <p className="font-medium">{member.name}</p>
