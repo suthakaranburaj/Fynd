@@ -29,6 +29,8 @@ import {
   Tag,
   FolderKanban,
   Bell,
+  AlertCircle,
+  CheckCircle,
 } from "lucide-react";
 import { CustomPagination } from "@/components/custom_ui";
 import { motion, AnimatePresence } from "framer-motion";
@@ -46,6 +48,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format, parse, isValid, parseISO } from "date-fns";
 import {
@@ -59,8 +67,10 @@ import { toast } from "sonner";
 import { CustomAlert } from "@/components/custom_ui";
 import { useDebounce } from "@/utils/debounce";
 import TaskFormModal from "../components/forms/TaskFormModal";
+import SendReminderModal from "../components/forms/SendReminderModal";
 import { TaskStatusBadge, PriorityBadge } from "../components/TaskBadges";
 import { taskService } from "@/services/taskService";
+import { reminderService } from "@/services/reminderService";
 import { companyMemberService } from "@/services/companyMemberService";
 import { teamService } from "@/services/teamService";
 import { type Task, type TaskFilters } from "@/types/task.types";
@@ -154,8 +164,10 @@ export default function TaskManagement() {
   });
 
   // Modal state
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [taskForReminder, setTaskForReminder] = useState<Task | null>(null);
 
   // Delete confirmation state
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -281,6 +293,18 @@ export default function TaskManagement() {
       return format(date, "MMM d, yyyy");
     } catch {
       return "Invalid date";
+    }
+  };
+
+  // Calculate days until due date
+  const getDaysUntilDue = (dueDate: string) => {
+    try {
+      const due = parseISO(dueDate);
+      const now = new Date();
+      const diffTime = due.getTime() - now.getTime();
+      return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    } catch {
+      return 0;
     }
   };
 
@@ -491,13 +515,19 @@ export default function TaskManagement() {
   // Handle Add Task
   const handleAddTask = () => {
     setEditingTask(null);
-    setIsModalOpen(true);
+    setIsTaskModalOpen(true);
   };
 
   // Handle Edit Task
   const handleEditTask = (task: Task) => {
     setEditingTask(task);
-    setIsModalOpen(true);
+    setIsTaskModalOpen(true);
+  };
+
+  // Handle Send Reminder
+  const handleSendReminder = (task: Task) => {
+    setTaskForReminder(task);
+    setIsReminderModalOpen(true);
   };
 
   // Handle Delete Task
@@ -552,13 +582,40 @@ export default function TaskManagement() {
         toast.success("Task created successfully!");
       }
 
-      setIsModalOpen(false);
+      setIsTaskModalOpen(false);
 
       // Refresh tasks list to get updated data
       fetchTasks();
     } catch (error: any) {
       console.error("Error saving task:", error);
       toast.error("Failed to save task", {
+        description: error.message || "Please try again",
+      });
+      throw error;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handle Send Manual Reminder
+  const handleSendManualReminder = async (taskId: string, message: string) => {
+    try {
+      setIsSubmitting(true);
+      // We need to call the backend with daysThreshold = 0 for immediate reminder
+      const response = await reminderService.sendManualReminder({
+        taskId,
+        daysThreshold: 0, // 0 means immediate reminder
+        message,
+      });
+
+      toast.success("Reminder sent successfully!", {
+        description: `Reminder sent to ${response.data.remindersSent} user(s)`,
+      });
+      setIsReminderModalOpen(false);
+      setTaskForReminder(null);
+    } catch (error: any) {
+      console.error("Error sending manual reminder:", error);
+      toast.error("Failed to send reminder", {
         description: error.message || "Please try again",
       });
       throw error;
@@ -1224,184 +1281,246 @@ export default function TaskManagement() {
                             </TableCell>
                           </motion.tr>
                         ) : (
-                          tasks.map((task, index) => (
-                            <motion.tr
-                              key={task.id}
-                              custom={index}
-                              initial="hidden"
-                              animate="visible"
-                              whileHover="hover"
-                              variants={rowVariants}
-                              className="group border-1 hover:bg-secondary/20"
-                              layout
-                              transition={{
-                                layout: { duration: 0.3 },
-                              }}
-                            >
-                              <TableCell className="group-hover:bg-secondary/30 cursor-pointer">
-                                <div className="flex items-center gap-3">
-                                  <div className="h-10 w-10 rounded-md bg-secondary flex items-center justify-center">
-                                    <Clock className="h-5 w-5 text-muted-foreground" />
-                                  </div>
-                                  <div>
-                                    <p className="font-medium">{task.title}</p>
-                                    <div className="flex items-center gap-2 mt-1">
-                                      {task.project && (
-                                        <Badge
-                                          variant="outline"
-                                          className="text-xs"
-                                        >
-                                          <FolderKanban className="h-3 w-3 mr-1" />
-                                          {task.project}
-                                        </Badge>
-                                      )}
-                                      {task.tags.length > 0 && (
-                                        <Badge
-                                          variant="outline"
-                                          className="text-xs"
-                                        >
-                                          <Tag className="h-3 w-3 mr-1" />
-                                          {task.tags[0]}
-                                          {task.tags.length > 1 &&
-                                            ` +${task.tags.length - 1}`}
-                                        </Badge>
-                                      )}
+                          tasks.map((task, index) => {
+                            const daysUntilDue = getDaysUntilDue(task.dueDate);
+                            const isUrgent =
+                              daysUntilDue <= 3 && daysUntilDue >= 0;
+                            const isOverdue =
+                              daysUntilDue < 0 && task.status !== "completed";
+
+                            return (
+                              <motion.tr
+                                key={task.id}
+                                custom={index}
+                                initial="hidden"
+                                animate="visible"
+                                whileHover="hover"
+                                variants={rowVariants}
+                                className={`group border-1 hover:bg-secondary/20 ${
+                                  isOverdue
+                                    ? "bg-red-50/50 dark:bg-red-950/20"
+                                    : isUrgent
+                                      ? "bg-orange-50/50 dark:bg-orange-950/20"
+                                      : ""
+                                }`}
+                                layout
+                                transition={{
+                                  layout: { duration: 0.3 },
+                                }}
+                              >
+                                <TableCell className="group-hover:bg-secondary/30 cursor-pointer">
+                                  <div className="flex items-center gap-3">
+                                    <div
+                                      className={`h-10 w-10 rounded-md flex items-center justify-center ${
+                                        isOverdue
+                                          ? "bg-red-100 text-red-600"
+                                          : isUrgent
+                                            ? "bg-orange-100 text-orange-600"
+                                            : "bg-secondary text-muted-foreground"
+                                      }`}
+                                    >
+                                      <Clock className="h-5 w-5" />
                                     </div>
-                                  </div>
-                                </div>
-                              </TableCell>
-                              <TableCell className="group-hover:bg-secondary/30 cursor-pointer max-w-xs">
-                                <div className="line-clamp-2 text-sm">
-                                  {task.description || "No description"}
-                                </div>
-                                <div className="flex items-center gap-2 mt-2">
-                                  {task.comments.length > 0 && (
-                                    <Badge
-                                      variant="outline"
-                                      className="text-xs"
-                                    >
-                                      <MessageSquare className="h-3 w-3 mr-1" />
-                                      {task.comments.length}
-                                    </Badge>
-                                  )}
-                                  {task.attachments.length > 0 && (
-                                    <Badge
-                                      variant="outline"
-                                      className="text-xs"
-                                    >
-                                      <Paperclip className="h-3 w-3 mr-1" />
-                                      {task.attachments.length}
-                                    </Badge>
-                                  )}
-                                </div>
-                              </TableCell>
-                              <TableCell className="group-hover:bg-secondary/30 cursor-pointer">
-                                <div className="space-y-1">
-                                  {task.assignedTo ? (
-                                    <div className="flex items-center gap-2">
-                                      <User className="h-4 w-4 text-muted-foreground" />
-                                      <div>
-                                        <p className="text-sm font-medium">
-                                          {task.assignedTo.fullName}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                          {task.assignedTo.email}
-                                        </p>
+                                    <div>
+                                      <p className="font-medium">
+                                        {task.title}
+                                      </p>
+                                      <div className="flex items-center gap-2 mt-1">
+                                        {task.project && (
+                                          <Badge
+                                            variant="outline"
+                                            className="text-xs"
+                                          >
+                                            <FolderKanban className="h-3 w-3 mr-1" />
+                                            {task.project}
+                                          </Badge>
+                                        )}
+                                        {task.tags.length > 0 && (
+                                          <Badge
+                                            variant="outline"
+                                            className="text-xs"
+                                          >
+                                            <Tag className="h-3 w-3 mr-1" />
+                                            {task.tags[0]}
+                                            {task.tags.length > 1 &&
+                                              ` +${task.tags.length - 1}`}
+                                          </Badge>
+                                        )}
+                                        {isOverdue && (
+                                          <Badge
+                                            variant="destructive"
+                                            className="text-xs"
+                                          >
+                                            <AlertCircle className="h-3 w-3 mr-1" />
+                                            Overdue
+                                          </Badge>
+                                        )}
+                                        {isUrgent && !isOverdue && (
+                                          <Badge
+                                            variant="outline"
+                                            className="text-xs border-orange-300 text-orange-600"
+                                          >
+                                            <Clock className="h-3 w-3 mr-1" />
+                                            {daysUntilDue === 0
+                                              ? "Due today"
+                                              : daysUntilDue === 1
+                                                ? "Due tomorrow"
+                                                : `Due in ${daysUntilDue} days`}
+                                          </Badge>
+                                        )}
                                       </div>
                                     </div>
-                                  ) : task.team ? (
-                                    <div className="flex items-center gap-2">
-                                      <Users className="h-4 w-4 text-muted-foreground" />
-                                      <div>
-                                        <p className="text-sm font-medium">
-                                          {task.team.teamName}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                          Team Assignment
-                                        </p>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="group-hover:bg-secondary/30 cursor-pointer max-w-xs">
+                                  <div className="line-clamp-2 text-sm">
+                                    {task.description || "No description"}
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-2">
+                                    {task.comments.length > 0 && (
+                                      <Badge
+                                        variant="outline"
+                                        className="text-xs"
+                                      >
+                                        <MessageSquare className="h-3 w-3 mr-1" />
+                                        {task.comments.length}
+                                      </Badge>
+                                    )}
+                                    {task.attachments.length > 0 && (
+                                      <Badge
+                                        variant="outline"
+                                        className="text-xs"
+                                      >
+                                        <Paperclip className="h-3 w-3 mr-1" />
+                                        {task.attachments.length}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="group-hover:bg-secondary/30 cursor-pointer">
+                                  <div className="space-y-1">
+                                    {task.assignedTo ? (
+                                      <div className="flex items-center gap-2">
+                                        <User className="h-4 w-4 text-muted-foreground" />
+                                        <div>
+                                          <p className="text-sm font-medium">
+                                            {task.assignedTo.fullName}
+                                          </p>
+                                          <p className="text-xs text-muted-foreground">
+                                            {task.assignedTo.email}
+                                          </p>
+                                        </div>
                                       </div>
-                                    </div>
-                                  ) : (
-                                    <div className="text-sm text-muted-foreground">
-                                      Unassigned
-                                    </div>
-                                  )}
-                                </div>
-                              </TableCell>
-                              <TableCell className="group-hover:bg-secondary/30 cursor-pointer">
-                                <PriorityBadge priority={task.priority} />
-                              </TableCell>
-                              <TableCell className="group-hover:bg-secondary/30 cursor-pointer">
-                                <div className="flex items-center gap-2">
-                                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                                  <span className="text-sm">
-                                    {formatDateShort(task.dueDate)}
-                                  </span>
-                                </div>
-                              </TableCell>
-                              <TableCell className="group-hover:bg-secondary/30 cursor-pointer">
-                                <TaskStatusBadge status={task.status} />
-                              </TableCell>
-                              <TableCell className="group-hover:bg-secondary/30 cursor-pointer">
-                                <div className="space-y-1">
-                                  <div className="flex items-center">
-                                    <span className="text-xs font-medium text-green-400">
-                                      Created:
-                                    </span>
-                                    <p className="text-xs text-muted-foreground ml-1">
-                                      {formatDateTime(task.createdAt)}
-                                    </p>
+                                    ) : task.team ? (
+                                      <div className="flex items-center gap-2">
+                                        <Users className="h-4 w-4 text-muted-foreground" />
+                                        <div>
+                                          <p className="text-sm font-medium">
+                                            {task.team.teamName}
+                                          </p>
+                                          <p className="text-xs text-muted-foreground">
+                                            Team Assignment
+                                          </p>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="text-sm text-muted-foreground">
+                                        Unassigned
+                                      </div>
+                                    )}
                                   </div>
-                                  <div className="flex items-center">
-                                    <span className="text-xs font-medium text-orange-400">
-                                      Updated:
+                                </TableCell>
+                                <TableCell className="group-hover:bg-secondary/30 cursor-pointer">
+                                  <PriorityBadge priority={task.priority} />
+                                </TableCell>
+                                <TableCell className="group-hover:bg-secondary/30 cursor-pointer">
+                                  <div className="flex items-center gap-2">
+                                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-sm">
+                                      {formatDateShort(task.dueDate)}
                                     </span>
-                                    <p className="text-xs text-muted-foreground ml-1">
-                                      {formatDateTime(task.updatedAt)}
-                                    </p>
+                                    {daysUntilDue >= 0 && (
+                                      <Badge
+                                        variant="outline"
+                                        className="text-xs"
+                                      >
+                                        {daysUntilDue === 0
+                                          ? "Today"
+                                          : daysUntilDue === 1
+                                            ? "1 day"
+                                            : `${daysUntilDue} days`}
+                                      </Badge>
+                                    )}
                                   </div>
-                                </div>
-                              </TableCell>
-                              <TableCell className="group-hover:bg-secondary/30">
-                                <div className="flex gap-2">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => handleEditTask(task)}
-                                    className="h-8 w-8 hover:bg-blue-100"
-                                    disabled={isLoading || isSubmitting}
-                                  >
-                                    <Edit className="h-4 w-4 text-blue-600" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => confirmDeleteTask(task)}
-                                    className="h-8 w-8 hover:bg-red-100"
-                                    disabled={
-                                      isLoading ||
-                                      isSubmitting ||
-                                      task.status === "cancelled"
-                                    }
-                                  >
-                                    <Trash2 className="h-4 w-4 text-red-600" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 hover:bg-red-100"
-                                    disabled={
-                                      isLoading ||
-                                      isSubmitting ||
-                                      task.status === "cancelled"
-                                    }
-                                  >
-                                    <Bell className="h-4 w-4 text-green-600" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </motion.tr>
-                          ))
+                                </TableCell>
+                                <TableCell className="group-hover:bg-secondary/30 cursor-pointer">
+                                  <TaskStatusBadge status={task.status} />
+                                </TableCell>
+                                <TableCell className="group-hover:bg-secondary/30 cursor-pointer">
+                                  <div className="space-y-1">
+                                    <div className="flex items-center">
+                                      <span className="text-xs font-medium text-green-400">
+                                        Created:
+                                      </span>
+                                      <p className="text-xs text-muted-foreground ml-1">
+                                        {formatDateTime(task.createdAt)}
+                                      </p>
+                                    </div>
+                                    <div className="flex items-center">
+                                      <span className="text-xs font-medium text-orange-400">
+                                        Updated:
+                                      </span>
+                                      <p className="text-xs text-muted-foreground ml-1">
+                                        {formatDateTime(task.updatedAt)}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="group-hover:bg-secondary/30">
+                                  <div className="flex gap-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => handleEditTask(task)}
+                                      className="h-8 w-8 hover:bg-blue-100"
+                                      disabled={isLoading || isSubmitting}
+                                    >
+                                      <Edit className="h-4 w-4 text-blue-600" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => handleSendReminder(task)}
+                                      className="h-8 w-8 hover:bg-green-100"
+                                      disabled={
+                                        isLoading ||
+                                        isSubmitting ||
+                                        task.status === "completed" ||
+                                        task.status === "cancelled"
+                                      }
+                                      title="Send Reminder"
+                                    >
+                                      <Bell className="h-4 w-4 text-green-600" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => confirmDeleteTask(task)}
+                                      className="h-8 w-8 hover:bg-red-100"
+                                      disabled={
+                                        isLoading ||
+                                        isSubmitting ||
+                                        task.status === "cancelled"
+                                      }
+                                      title="Delete Task"
+                                    >
+                                      <Trash2 className="h-4 w-4 text-red-600" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </motion.tr>
+                            );
+                          })
                         )}
                       </AnimatePresence>
                     </TableBody>
@@ -1427,12 +1546,11 @@ export default function TaskManagement() {
           )}
         </div>
       </motion.div>
-
       {/* Task Form Modal */}
-      {isModalOpen && (
+      {isTaskModalOpen && (
         <TaskFormModal
-          open={isModalOpen}
-          onOpenChange={setIsModalOpen}
+          open={isTaskModalOpen}
+          onOpenChange={setIsTaskModalOpen}
           editingTask={editingTask}
           onSave={handleSaveTask}
           isSubmitting={isSubmitting}
@@ -1440,7 +1558,16 @@ export default function TaskManagement() {
           teams={teams}
         />
       )}
-
+      // Update the modal call in TaskManagement:
+      {isReminderModalOpen && taskForReminder && (
+        <SendReminderModal
+          open={isReminderModalOpen}
+          onOpenChange={setIsReminderModalOpen}
+          task={taskForReminder}
+          onSend={handleSendManualReminder}
+          isSubmitting={isSubmitting}
+        />
+      )}
       {/* Delete Confirmation */}
       <CustomAlert
         open={deleteOpen}
@@ -1461,6 +1588,3 @@ export default function TaskManagement() {
     </>
   );
 }
-
-
-

@@ -140,122 +140,133 @@ const getReminderDescription = (threshold, task) => {
     }
 };
 
+// In reminderController.js, update the sendManualReminder function for immediate reminders:
+
 /**
  * @desc    Send manual reminder for a task
  * @route   POST /api/reminders/manual
  * @access  Private
  */
 export const sendManualReminder = asyncHandler(async (req, res) => {
-    const currentUser = req.user;
-    const { taskId, daysThreshold, message } = req.body;
-
-    // Validate required fields
-    if (!taskId) {
-        return sendResponse(res, false, null, "Task ID is required", 400);
-    }
-
-    if (!daysThreshold && daysThreshold !== 0) {
-        return sendResponse(res, false, null, "Days threshold is required", 400);
-    }
-
-    // Validate task exists and user has permission
-    const task = await Task.findOne({
-        _id: taskId,
-        organization: currentUser.organization,
-        isDeleted: false
-    });
-
-    if (!task) {
-        return sendResponse(res, false, null, "Task not found", 404);
-    }
-
-    // Check if user has permission (either assigned by, assigned to, or team member)
-    const hasPermission = await checkReminderPermission(task, currentUser._id);
-
-    if (!hasPermission) {
-        return sendResponse(
-            res,
-            false,
-            null,
-            "You don't have permission to send reminders for this task",
-            403
-        );
-    }
-
-    // Get users to notify
-    let usersToNotify = [];
-
-    if (task.assignedToType === "user" && task.assignedTo) {
-        usersToNotify.push(task.assignedTo);
-    } else if (task.assignedToType === "team" && task.team) {
-        const teamMembers = await TeamMember.find({
-            team: task.team,
-            isActive: true
-        }).select("user");
-
-        usersToNotify = teamMembers.map((member) => member.user);
-    }
-
-    // Remove duplicates and exclude current user
-    usersToNotify = [...new Set(usersToNotify.map((id) => id.toString()))]
-        .filter((userId) => userId !== currentUser._id.toString())
-        .map((id) => new mongoose.Types.ObjectId(id));
-
-    if (usersToNotify.length === 0) {
-        return sendResponse(res, false, null, "No users to notify", 400);
-    }
-
-    // Calculate reminder date
+  const currentUser = req.user;
+  const { taskId, daysThreshold = 0, message } = req.body;
+  
+  // Validate required fields
+  if (!taskId) {
+    return sendResponse(res, false, null, "Task ID is required", 400);
+  }
+  
+  if (daysThreshold < 0) {
+    return sendResponse(res, false, null, "Days threshold must be 0 or positive", 400);
+  }
+  
+  // Validate task exists and user has permission
+  const task = await Task.findOne({
+    _id: taskId,
+    organization: currentUser.organization,
+    isDeleted: false
+  });
+  
+  if (!task) {
+    return sendResponse(res, false, null, "Task not found", 404);
+  }
+  
+  // Check if user has permission (either assigned by, assigned to, or team member)
+  const hasPermission = await checkReminderPermission(task, currentUser._id);
+  
+  if (!hasPermission) {
+    return sendResponse(res, false, null, "You don't have permission to send reminders for this task", 403);
+  }
+  
+  // Get users to notify
+  let usersToNotify = [];
+  
+  if (task.assignedToType === "user" && task.assignedTo) {
+    usersToNotify.push(task.assignedTo);
+  } else if (task.assignedToType === "team" && task.team) {
+    const teamMembers = await TeamMember.find({
+      team: task.team,
+      isActive: true
+    }).select("user");
+    
+    usersToNotify = teamMembers.map(member => member.user);
+  }
+  
+  // Remove duplicates and exclude current user
+  usersToNotify = [...new Set(usersToNotify.map(id => id.toString()))]
+    .filter(userId => userId !== currentUser._id.toString())
+    .map(id => new mongoose.Types.ObjectId(id));
+  
+  if (usersToNotify.length === 0) {
+    return sendResponse(res, false, null, "No users to notify", 400);
+  }
+  
+  // If daysThreshold is 0, send immediate reminder
+  let reminderDate;
+  if (daysThreshold === 0) {
+    // Send immediately - set reminder date to now
+    reminderDate = new Date();
+  } else {
+    // For future reminders, calculate reminder date
     const dueDate = new Date(task.dueDate);
-    const reminderDate = new Date(dueDate);
+    reminderDate = new Date(dueDate);
     reminderDate.setDate(reminderDate.getDate() - daysThreshold);
-
-    // Create reminders
-    const reminderPromises = [];
-    const today = new Date();
-
-    for (const userId of usersToNotify) {
-        const reminderData = {
-            title: message || getReminderTitle(daysThreshold, task.title),
-            description: message || getReminderDescription(daysThreshold, task),
-            type: "task",
-            priority: task.priority,
-            status: "unread",
-            dueDate: dueDate,
-            reminderDate: reminderDate < today ? today : reminderDate,
-            task: task._id,
-            assignedTo: userId,
-            assignedBy: currentUser._id,
-            team: task.team || null,
-            organization: task.organization,
-            metadata: {
-                taskId: task._id,
-                taskTitle: task.title,
-                url: `/tasks/${task._id}`
-            }
-        };
-
-        reminderPromises.push(Reminder.create(reminderData));
-    }
-
-    await Promise.all(reminderPromises);
-
-    // Create notifications for users
+  }
+  
+  // Create reminders
+  const reminderPromises = [];
+  
+  for (const userId of usersToNotify) {
+    const reminderData = {
+      title: message || `Reminder: ${task.title}`,
+      description: message || `Please check the task "${task.title}"`,
+      type: "task",
+      priority: task.priority,
+      status: "unread",
+      dueDate: task.dueDate,
+      reminderDate: reminderDate,
+      task: task._id,
+      assignedTo: userId,
+      assignedBy: currentUser._id,
+      team: task.team || null,
+      organization: task.organization,
+      metadata: {
+        taskId: task._id,
+        taskTitle: task.title,
+        url: `/tasks/${task._id}`
+      }
+    };
+    
+    reminderPromises.push(Reminder.create(reminderData));
+  }
+  
+  await Promise.all(reminderPromises);
+  
+  // Create notifications for users
+  const notificationTitle = daysThreshold === 0 
+    ? "Immediate Task Reminder" 
+    : `Manual Reminder (${daysThreshold} days before due)`;
+  
+  const notificationDescription = message || `Reminder for task: "${task.title}"`;
+  
+  // Send immediate notification for reminders with daysThreshold = 0
+  if (daysThreshold === 0) {
     await createUserNotification(
-        "Manual Reminder Sent",
-        `A manual reminder has been sent for task: "${task.title}"`,
-        usersToNotify,
-        "normal",
-        currentUser._id
+      notificationTitle,
+      notificationDescription,
+      usersToNotify,
+      "normal",
+      currentUser._id
     );
-
-    return sendResponse(
-        res,
-        true,
-        { remindersSent: reminderPromises.length },
-        `Manual reminder sent to ${reminderPromises.length} user(s)`,
-        201
-    );
+  }
+  
+  return sendResponse(
+    res,
+    true,
+    { remindersSent: reminderPromises.length },
+    `Manual reminder sent to ${reminderPromises.length} user(s)`,
+    201
+  );
 });
 
 /**

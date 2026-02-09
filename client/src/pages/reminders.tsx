@@ -29,7 +29,6 @@ import {
   MoreVertical,
   FolderKanban,
   Users,
-  Target,
 } from "lucide-react";
 import { CustomPagination } from "@/components/custom_ui";
 import { motion, AnimatePresence } from "framer-motion";
@@ -48,7 +47,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import {
   containerVariants,
   itemVariants,
@@ -58,51 +57,15 @@ import {
 } from "@/components/FramerVariants";
 import { toast } from "sonner";
 import { CustomAlert } from "@/components/custom_ui";
-
-// Types
-type ReminderPriority = "low" | "medium" | "high";
-type ReminderStatus = "unread" | "read" | "dismissed";
-type ReminderType =
-  | "task"
-  | "meeting"
-  | "deadline"
-  | "notification"
-  | "system"
-  | "project";
-
-interface Sender {
-  id: string;
-  fullName: string;
-  email: string;
-  avatar?: string;
-  role?: string;
-}
-
-interface ReminderMetadata {
-  taskId?: string;
-  taskTitle?: string;
-  meetingId?: string;
-  meetingTitle?: string;
-  projectId?: string;
-  projectName?: string;
-  url?: string;
-}
-
-interface Reminder {
-  id: string;
-  title: string;
-  description: string;
-  type: ReminderType;
-  priority: ReminderPriority;
-  status: ReminderStatus;
-  sender?: Sender;
-  dueDate?: string;
-  readAt?: string;
-  dismissedAt?: string;
-  createdAt: string;
-  updatedAt: string;
-  metadata?: ReminderMetadata;
-}
+import { reminderService } from "@/services/reminderService";
+import type {
+  Reminder,
+  ReminderFilters,
+  ReminderType,
+  ReminderPriority,
+  ReminderStatus,
+  Sender,
+} from "@/types/reminder.types";
 
 // Loading skeleton component
 const RemindersSkeleton = () => {
@@ -286,259 +249,37 @@ const TypeBadge = ({ type }: { type: ReminderType }) => {
   );
 };
 
-// Dummy data
-const DUMMY_REMINDERS: Reminder[] = [
-  {
-    id: "1",
-    title: "Project Deadline Approaching",
-    description:
-      "The 'Website Redesign' project deadline is in 2 days. Please ensure all tasks are completed.",
-    type: "project",
-    priority: "high",
-    status: "unread",
-    sender: {
-      id: "101",
-      fullName: "Sarah Johnson",
-      email: "sarah.j@example.com",
-      role: "Project Manager",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah",
-    },
-    dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-    createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-    metadata: {
-      projectId: "proj-001",
-      projectName: "Website Redesign",
-      url: "/projects/proj-001",
-    },
-  },
-  {
-    id: "2",
-    title: "Team Meeting Today",
-    description: "Weekly team sync meeting at 2:00 PM in Conference Room A",
-    type: "meeting",
-    priority: "medium",
-    status: "unread",
-    sender: {
-      id: "102",
-      fullName: "Michael Chen",
-      email: "michael.c@example.com",
-      role: "Team Lead",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Michael",
-    },
-    dueDate: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(),
-    createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-    metadata: {
-      meetingId: "meet-001",
-      meetingTitle: "Weekly Team Sync",
-      url: "/meetings/meet-001",
-    },
-  },
-  {
-    id: "3",
-    title: "Task Review Required",
-    description:
-      "Please review the pending tasks assigned to you and update their status",
-    type: "task",
-    priority: "medium",
-    status: "read",
-    sender: {
-      id: "103",
-      fullName: "Alex Rodriguez",
-      email: "alex.r@example.com",
-      role: "Senior Developer",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alex",
-    },
-    dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-    readAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    metadata: {
-      taskId: "task-001",
-      taskTitle: "Dashboard Implementation",
-      url: "/tasks/task-001",
-    },
-  },
-  {
-    id: "4",
-    title: "System Maintenance Notification",
-    description:
-      "Scheduled system maintenance this Saturday from 10:00 PM to 2:00 AM",
-    type: "system",
-    priority: "low",
-    status: "read",
-    sender: {
-      id: "104",
-      fullName: "System Admin",
-      email: "admin@example.com",
-      role: "System Administrator",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Admin",
-    },
-    dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-    readAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-    createdAt: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "5",
-    title: "Client Presentation Tomorrow",
-    description:
-      "Final presentation for the Johnson account scheduled for 10:00 AM",
-    type: "deadline",
-    priority: "high",
-    status: "unread",
-    sender: {
-      id: "105",
-      fullName: "Emily Watson",
-      email: "emily.w@example.com",
-      role: "Account Manager",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Emily",
-    },
-    dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-    createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-    metadata: {
-      meetingId: "meet-002",
-      meetingTitle: "Johnson Account Presentation",
-      url: "/meetings/meet-002",
-    },
-  },
-  {
-    id: "6",
-    title: "Quarterly Goals Review",
-    description:
-      "Don't forget to submit your quarterly goals for review by end of day",
-    type: "deadline",
-    priority: "medium",
-    status: "dismissed",
-    sender: {
-      id: "106",
-      fullName: "David Kim",
-      email: "david.k@example.com",
-      role: "HR Manager",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=David",
-    },
-    dueDate: new Date(Date.now()).toISOString(),
-    readAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-    dismissedAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-    createdAt: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "7",
-    title: "New Team Member Onboarding",
-    description:
-      "Welcome new team member - John Smith. Please help with onboarding process.",
-    type: "notification",
-    priority: "low",
-    status: "read",
-    sender: {
-      id: "107",
-      fullName: "Lisa Wang",
-      email: "lisa.w@example.com",
-      role: "Team Lead",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Lisa",
-    },
-    dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-    readAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-    createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "8",
-    title: "Code Review Request",
-    description: "Please review the latest PR for the authentication module",
-    type: "task",
-    priority: "medium",
-    status: "unread",
-    sender: {
-      id: "108",
-      fullName: "Robert Brown",
-      email: "robert.b@example.com",
-      role: "Senior Developer",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Robert",
-    },
-    dueDate: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(),
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    metadata: {
-      taskId: "task-002",
-      taskTitle: "Authentication Module PR",
-      url: "/tasks/task-002",
-    },
-  },
-  {
-    id: "9",
-    title: "Budget Approval Needed",
-    description: "Q3 budget needs your approval before end of week",
-    type: "deadline",
-    priority: "high",
-    status: "read",
-    sender: {
-      id: "109",
-      fullName: "Jennifer Lee",
-      email: "jennifer.l@example.com",
-      role: "Finance Manager",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Jennifer",
-    },
-    dueDate: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(),
-    readAt: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
-    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "10",
-    title: "Security Training Completion",
-    description:
-      "Complete the mandatory security awareness training by next week",
-    type: "task",
-    priority: "medium",
-    status: "unread",
-    sender: {
-      id: "110",
-      fullName: "Security Team",
-      email: "security@example.com",
-      role: "Security Department",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Security",
-    },
-    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    createdAt: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
-    metadata: {
-      taskId: "task-003",
-      taskTitle: "Security Awareness Training",
-      url: "/tasks/task-003",
-    },
-  },
-];
-
 // Main Reminders Component
 export default function Reminders() {
   // State for reminders
-  const [reminders, setReminders] = useState<Reminder[]>(DUMMY_REMINDERS);
+  const [reminders, setReminders] = useState<Reminder[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Filter state
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<ReminderFilters>({
     search: "",
     type: "all",
     priority: "all",
     status: "all",
     page: 1,
     limit: 10,
-    sortBy: "createdAt" as keyof Reminder,
+    sortBy: "createdAt",
     sortOrder: "desc" as "asc" | "desc",
   });
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(10);
-  const [totalItems, setTotalItems] = useState<number>(DUMMY_REMINDERS.length);
-  const [totalPages, setTotalPages] = useState<number>(
-    Math.ceil(DUMMY_REMINDERS.length / 10),
-  );
+  const [totalItems, setTotalItems] = useState<number>(0);
+  const [totalPages, setTotalPages] = useState<number>(1);
+
+  // Statistics state
+  const [statistics, setStatistics] = useState({
+    total: 0,
+    unread: 0,
+    read: 0,
+  });
 
   // Sort state
   const [sortConfig, setSortConfig] = useState<{
@@ -555,12 +296,12 @@ export default function Reminders() {
   // Local state for search input
   const [searchInput, setSearchInput] = useState<string>("");
 
-  // Get unique types, priorities, statuses for filters
-  const filterOptions = {
-    types: Array.from(new Set(reminders.map((r) => r.type))),
-    priorities: Array.from(new Set(reminders.map((r) => r.priority))),
-    statuses: Array.from(new Set(reminders.map((r) => r.status))),
-  };
+  // Filter options
+  const [filterOptions, setFilterOptions] = useState({
+    types: ["task", "meeting", "deadline", "notification", "system", "project"],
+    priorities: ["low", "medium", "high"],
+    statuses: ["unread", "read", "dismissed"],
+  });
 
   // Handle search input changes
   const handleSearchChange = (value: string) => {
@@ -572,7 +313,7 @@ export default function Reminders() {
   const formatDateTime = (dateString: string) => {
     if (!dateString) return "N/A";
     try {
-      const date = new Date(dateString);
+      const date = parseISO(dateString);
       if (isNaN(date.getTime())) return "Invalid date";
       return format(date, "MMM d, yyyy 'at' h:mm a");
     } catch {
@@ -583,7 +324,7 @@ export default function Reminders() {
   const formatDateShort = (dateString: string) => {
     if (!dateString) return "No due date";
     try {
-      const date = new Date(dateString);
+      const date = parseISO(dateString);
       if (isNaN(date.getTime())) return "Invalid date";
       return format(date, "MMM d, yyyy");
     } catch {
@@ -591,84 +332,59 @@ export default function Reminders() {
     }
   };
 
-  // Filter and sort reminders
-  const getFilteredReminders = () => {
-    let filtered = [...reminders];
-
-    // Apply search filter
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      filtered = filtered.filter(
-        (reminder) =>
-          reminder.title.toLowerCase().includes(searchLower) ||
-          reminder.description.toLowerCase().includes(searchLower) ||
-          reminder.sender?.fullName.toLowerCase().includes(searchLower),
-      );
-    }
-
-    // Apply type filter
-    if (filters.type !== "all") {
-      filtered = filtered.filter((reminder) => reminder.type === filters.type);
-    }
-
-    // Apply priority filter
-    if (filters.priority !== "all") {
-      filtered = filtered.filter(
-        (reminder) => reminder.priority === filters.priority,
-      );
-    }
-
-    // Apply status filter
-    if (filters.status !== "all") {
-      filtered = filtered.filter(
-        (reminder) => reminder.status === filters.status,
-      );
-    }
-
-    // Apply sorting
-    if (sortConfig) {
-      filtered.sort((a, b) => {
-        const aValue = a[sortConfig.key];
-        const bValue = b[sortConfig.key];
-
-        if (typeof aValue === "string" && typeof bValue === "string") {
-          if (sortConfig.direction === "asc") {
-            return aValue.localeCompare(bValue);
-          } else {
-            return bValue.localeCompare(aValue);
-          }
-        }
-
-        if (aValue == null || bValue == null) return 0;
-        if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
-        if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
-        return 0;
+  // Fetch reminders from backend
+  const fetchReminders = async () => {
+    setIsLoading(true);
+    try {
+      const response = await reminderService.getReminders({
+        ...filters,
+        page: currentPage,
+        limit: itemsPerPage,
+        sortBy: sortConfig?.key || "createdAt",
+        sortOrder: sortConfig?.direction || "desc",
       });
+
+      setReminders(response.data.reminders);
+      setStatistics(response.data.statistics);
+      setTotalItems(response.data.pagination.totalItems);
+      setTotalPages(response.data.pagination.totalPages);
+
+      // Save to local storage as backup
+      reminderService.saveRemindersToLocalStorage(response.data.reminders);
+    } catch (error: any) {
+      console.error("Error fetching reminders:", error);
+
+      // Fallback to local storage if API fails
+      const localReminders = reminderService.getRemindersFromLocalStorage();
+      setReminders(localReminders.slice(0, itemsPerPage));
+      setTotalItems(localReminders.length);
+      setTotalPages(Math.ceil(localReminders.length / itemsPerPage));
+
+      toast.error("Failed to fetch reminders from server", {
+        description: "Using cached data as fallback",
+      });
+    } finally {
+      setIsLoading(false);
     }
-
-    return filtered;
   };
 
-  // Get paginated reminders
-  const getPaginatedReminders = () => {
-    const filtered = getFilteredReminders();
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filtered.slice(startIndex, endIndex);
-  };
+  // Initial fetch
+  useEffect(() => {
+    fetchReminders();
+  }, [currentPage, itemsPerPage, filters, sortConfig]);
 
   // Update pagination when filters change
   useEffect(() => {
-    const filtered = getFilteredReminders();
-    setTotalItems(filtered.length);
-    setTotalPages(Math.ceil(filtered.length / itemsPerPage));
-
-    // If current page is out of bounds, go to page 1
-    if (currentPage > Math.ceil(filtered.length / itemsPerPage)) {
-      setCurrentPage(1);
-      setFilters((prev) => ({ ...prev, page: 1 }));
-    }
-  }, [filters, reminders, itemsPerPage, sortConfig]);
+    setCurrentPage(1);
+    setFilters((prev) => ({ ...prev, page: 1 }));
+  }, [
+    filters.search,
+    filters.type,
+    filters.priority,
+    filters.status,
+    filters.startDate,
+    filters.endDate,
+  ]);
 
   // Handle filter changes
   const handleFilterChange = (field: string, value: any) => {
@@ -698,7 +414,7 @@ export default function Reminders() {
   };
 
   // Clear specific filter
-  const clearFilter = (filterName: keyof typeof filters) => {
+  const clearFilter = (filterName: keyof ReminderFilters) => {
     setFilters((prev) => ({
       ...prev,
       [filterName]:
@@ -739,15 +455,16 @@ export default function Reminders() {
   };
 
   // Calculate start and end index for display
-  const displayReminders = getPaginatedReminders();
   const startIndex = (currentPage - 1) * itemsPerPage + 1;
   const endIndex = Math.min(currentPage * itemsPerPage, totalItems);
 
   // Handle Mark as Read
   const handleMarkAsRead = async (reminderId: string) => {
     setIsSubmitting(true);
-    // Simulate API delay
-    setTimeout(() => {
+    try {
+      await reminderService.markAsRead(reminderId);
+
+      // Update local state
       setReminders(
         reminders.map((reminder) =>
           reminder.id === reminderId
@@ -755,33 +472,67 @@ export default function Reminders() {
             : reminder,
         ),
       );
-      setIsSubmitting(false);
+
+      // Update statistics
+      setStatistics((prev) => ({
+        ...prev,
+        unread: prev.unread - 1,
+        read: prev.read + 1,
+      }));
+
       toast.success("Reminder marked as read!");
-    }, 300);
+    } catch (error: any) {
+      console.error("Error marking reminder as read:", error);
+      toast.error("Failed to mark reminder as read", {
+        description: error.message || "Please try again",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Handle Mark as Unread
   const handleMarkAsUnread = async (reminderId: string) => {
     setIsSubmitting(true);
-    // Simulate API delay
-    setTimeout(() => {
-      setReminders(
-        reminders.map((reminder) =>
-          reminder.id === reminderId
-            ? { ...reminder, status: "unread", readAt: undefined }
-            : reminder,
-        ),
-      );
+    try {
+      // Since backend doesn't have mark as unread, we'll simulate it
+      const reminder = reminders.find((r) => r.id === reminderId);
+      if (reminder) {
+        // Update local state
+        setReminders(
+          reminders.map((reminder) =>
+            reminder.id === reminderId
+              ? { ...reminder, status: "unread", readAt: undefined }
+              : reminder,
+          ),
+        );
+
+        // Update statistics
+        setStatistics((prev) => ({
+          ...prev,
+          unread: prev.unread + 1,
+          read: prev.read - 1,
+        }));
+
+        toast.success("Reminder marked as unread!");
+      }
+    } catch (error: any) {
+      console.error("Error marking reminder as unread:", error);
+      toast.error("Failed to mark reminder as unread", {
+        description: error.message || "Please try again",
+      });
+    } finally {
       setIsSubmitting(false);
-      toast.success("Reminder marked as unread!");
-    }, 300);
+    }
   };
 
   // Handle Dismiss Reminder
   const handleDismiss = async (reminderId: string) => {
     setIsSubmitting(true);
-    // Simulate API delay
-    setTimeout(() => {
+    try {
+      await reminderService.dismissReminder(reminderId);
+
+      // Update local state
       setReminders(
         reminders.map((reminder) =>
           reminder.id === reminderId
@@ -793,9 +544,30 @@ export default function Reminders() {
             : reminder,
         ),
       );
-      setIsSubmitting(false);
+
+      // Update statistics
+      const reminder = reminders.find((r) => r.id === reminderId);
+      if (reminder?.status === "unread") {
+        setStatistics((prev) => ({
+          ...prev,
+          unread: prev.unread - 1,
+        }));
+      } else if (reminder?.status === "read") {
+        setStatistics((prev) => ({
+          ...prev,
+          read: prev.read - 1,
+        }));
+      }
+
       toast.success("Reminder dismissed!");
-    }, 300);
+    } catch (error: any) {
+      console.error("Error dismissing reminder:", error);
+      toast.error("Failed to dismiss reminder", {
+        description: error.message || "Please try again",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Handle Delete Reminder
@@ -807,48 +579,90 @@ export default function Reminders() {
   const handleDeleteReminder = async () => {
     if (reminderToDelete) {
       setIsSubmitting(true);
-      // Simulate API delay
-      setTimeout(() => {
+      try {
+        await reminderService.deleteReminder(reminderToDelete.id);
+
+        // Update local state
         setReminders(
           reminders.filter((reminder) => reminder.id !== reminderToDelete.id),
         );
-        setIsSubmitting(false);
+
+        // Update statistics
+        const status = reminderToDelete.status;
+        setStatistics((prev) => ({
+          ...prev,
+          total: prev.total - 1,
+          [status]: prev[status as keyof typeof statistics] - 1,
+        }));
+
+        toast.success("Reminder deleted successfully!");
+      } catch (error: any) {
+        console.error("Error deleting reminder:", error);
+        toast.error("Failed to delete reminder", {
+          description: error.message || "Please try again",
+        });
+      } finally {
         setReminderToDelete(null);
         setDeleteOpen(false);
-        toast.success("Reminder deleted successfully!");
-      }, 500);
+        setIsSubmitting(false);
+      }
     }
   };
 
   // Refresh data
   const handleRefresh = () => {
-    setIsLoading(true);
-    // Simulate refresh delay
-    setTimeout(() => {
-      setIsLoading(false);
-      toast.info("Reminders refreshed!");
-    }, 800);
+    fetchReminders();
+    toast.info("Refreshing reminders...");
   };
 
   // Mark all as read
   const handleMarkAllAsRead = async () => {
     setIsSubmitting(true);
-    // Simulate API delay
-    setTimeout(() => {
+    try {
+      // Get all unread reminders
+      const unreadReminders = reminders.filter((r) => r.status === "unread");
+
+      // Mark each as read
+      for (const reminder of unreadReminders) {
+        try {
+          await reminderService.markAsRead(reminder.id);
+        } catch (error) {
+          console.error(
+            `Error marking reminder ${reminder.id} as read:`,
+            error,
+          );
+        }
+      }
+
+      // Update all reminders locally
       setReminders(
-        reminders.map((reminder) => ({
-          ...reminder,
-          status: "read",
-          readAt: new Date().toISOString(),
-        })),
+        reminders.map((reminder) =>
+          reminder.status === "unread"
+            ? { ...reminder, status: "read", readAt: new Date().toISOString() }
+            : reminder,
+        ),
       );
-      setIsSubmitting(false);
+
+      // Update statistics
+      setStatistics((prev) => ({
+        ...prev,
+        unread: 0,
+        read: prev.read + unreadReminders.length,
+      }));
+
       toast.success("All reminders marked as read!");
-    }, 500);
+    } catch (error: any) {
+      console.error("Error marking all reminders as read:", error);
+      toast.error("Failed to mark all reminders as read", {
+        description: error.message || "Please try again",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Get unread count
-  const unreadCount = reminders.filter((r) => r.status === "unread").length;
+  const unreadCount = statistics.unread;
 
   // Active filters count
   const activeFiltersCount = Object.entries(filters).filter(
@@ -1008,7 +822,7 @@ export default function Reminders() {
                       Type
                     </Label>
                     <Select
-                      value={filters.type}
+                      value={filters.type || "all"}
                       onValueChange={(value) =>
                         handleFilterChange("type", value)
                       }
@@ -1034,7 +848,7 @@ export default function Reminders() {
                       Priority
                     </Label>
                     <Select
-                      value={filters.priority}
+                      value={filters.priority || "all"}
                       onValueChange={(value) =>
                         handleFilterChange("priority", value)
                       }
@@ -1061,7 +875,7 @@ export default function Reminders() {
                       Status
                     </Label>
                     <Select
-                      value={filters.status}
+                      value={filters.status || "all"}
                       onValueChange={(value) =>
                         handleFilterChange("status", value)
                       }
@@ -1221,7 +1035,7 @@ export default function Reminders() {
                               </div>
                             </TableCell>
                           </motion.tr>
-                        ) : displayReminders.length === 0 ? (
+                        ) : reminders.length === 0 ? (
                           <motion.tr
                             key="no-data"
                             initial={{ opacity: 0 }}
@@ -1257,7 +1071,7 @@ export default function Reminders() {
                             </TableCell>
                           </motion.tr>
                         ) : (
-                          displayReminders.map((reminder, index) => (
+                          reminders.map((reminder, index) => (
                             <motion.tr
                               key={reminder.id}
                               custom={index}
@@ -1436,7 +1250,7 @@ export default function Reminders() {
           </motion.div>
 
           {/* Custom Pagination */}
-          {!isLoading && displayReminders.length > 0 && totalPages > 1 && (
+          {!isLoading && reminders.length > 0 && totalPages > 1 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
