@@ -9,6 +9,8 @@ import CompanyTeams from "./CompanyTeams";
 import MainNotification from "./MainNotificationsPage"
 import MessageTemplates from "./MessageTemplates";
 import Home from "./home";
+import Reminders from "./reminders";
+
 export {
   Dashboard,
   Login,
@@ -20,5 +22,6 @@ export {
   CompanyTeams,
   MainNotification,
   MessageTemplates,
-  Home
+  Home,
+  Reminders
 };

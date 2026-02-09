@@ -13,7 +13,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Mail, Lock, Eye, EyeOff, Zap, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 
 // Import Lottie JSON files
@@ -37,11 +39,16 @@ export default function Login() {
       toast.success("Login Successful");
       navigate("/dashboard");
     } else {
-      toast.error("Login Failed");
-      console.error(result.error);
+      toast.error(result.error || "Login Failed");
     }
 
     setLoading(false);
+  };
+
+  const loadDemoCredentials = () => {
+    setEmail("suthakaranburaj@gmail.com");
+    setPassword("s");
+    toast.info("Demo credentials loaded. Click Sign In to continue.");
   };
 
   // Animation variants
@@ -198,7 +205,43 @@ export default function Login() {
                   Sign in to manage your automated task follow-ups
                 </CardDescription>
               </motion.div>
+
+              {/* Demo Credentials Banner */}
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="pt-4"
+              >
+                <div
+                  className="p-4 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 cursor-pointer hover:from-blue-100 hover:to-indigo-100 transition-all duration-200"
+                  onClick={loadDemoCredentials}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                        <Zap className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-blue-800">
+                          Try Demo Account
+                        </div>
+                        <div className="text-sm text-blue-600">
+                          Click to load demo credentials
+                        </div>
+                      </div>
+                    </div>
+                    <UserCheck className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div className="mt-3 text-xs text-blue-700 bg-blue-100/50 p-2 rounded">
+                    <div className="font-medium">Demo Credentials:</div>
+                    <div>Email: suthakaranburaj@gmail.com</div>
+                    <div>Password: s</div>
+                  </div>
+                </div>
+              </motion.div>
             </CardHeader>
+
             <CardContent>
               <motion.form
                 onSubmit={handleSubmit}
@@ -312,7 +355,7 @@ export default function Login() {
                             repeat: Infinity,
                             ease: "linear",
                           }}
-                          className=" absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2"
+                          className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-4 border-2 border-current border-t-transparent rounded-full"
                         />
                       </>
                     ) : (
@@ -326,12 +369,25 @@ export default function Login() {
                     )}
                   </motion.button>
                 </motion.div>
+
+                {/* Quick Demo Button */}
+                <motion.div variants={itemVariants}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full gap-2"
+                    onClick={loadDemoCredentials}
+                  >
+                    <Zap className="h-4 w-4" />
+                    Load Demo Credentials
+                  </Button>
+                </motion.div>
               </motion.form>
             </CardContent>
-            <CardFooter className="flex justify-center border-t border-border/40 pt-6">
+            <CardFooter className="flex flex-col gap-4 border-t border-border/40 pt-6">
               <motion.p
                 variants={itemVariants}
-                className="text-sm text-muted-foreground"
+                className="text-sm text-muted-foreground text-center"
               >
                 Don't have an account?{" "}
                 <motion.span whileHover={{ scale: 1.05 }}>

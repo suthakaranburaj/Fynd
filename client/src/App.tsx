@@ -21,7 +21,8 @@ import {
   CompanyTeams,
   MainNotification,
   MessageTemplates,
-  Home
+  Home,
+  Reminders
 } from "./pages";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -164,6 +165,19 @@ function App() {
                       setIsExpanded={setIsExpanded}
                     >
                       <MessageTemplates />
+                    </Navbar>
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/reminders"
+                element={
+                  <PrivateRoute>
+                    <Navbar
+                      isExpanded={isExpanded}
+                      setIsExpanded={setIsExpanded}
+                    >
+                      <Reminders />
                     </Navbar>
                   </PrivateRoute>
                 }

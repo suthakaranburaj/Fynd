@@ -28,6 +28,7 @@ import {
   Paperclip,
   Tag,
   FolderKanban,
+  Bell,
 } from "lucide-react";
 import { CustomPagination } from "@/components/custom_ui";
 import { motion, AnimatePresence } from "framer-motion";
@@ -1384,6 +1385,18 @@ export default function TaskManagement() {
                                     }
                                   >
                                     <Trash2 className="h-4 w-4 text-red-600" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 hover:bg-red-100"
+                                    disabled={
+                                      isLoading ||
+                                      isSubmitting ||
+                                      task.status === "cancelled"
+                                    }
+                                  >
+                                    <Bell className="h-4 w-4 text-green-600" />
                                   </Button>
                                 </div>
                               </TableCell>

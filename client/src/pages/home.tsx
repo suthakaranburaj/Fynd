@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight,
@@ -29,6 +29,8 @@ import {
   BarChart,
   Cloud,
   Lock,
+  User,
+  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -50,11 +52,14 @@ import {
   fadeIn,
   slideIn,
 } from "@/components/FramerVariants";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Navbar Component
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -98,6 +103,10 @@ const Navbar = () => {
       href: "#",
     },
   ];
+
+  const handleSignInClick = () => {
+    navigate("/login");
+  };
 
   return (
     <motion.nav
@@ -189,17 +198,55 @@ const Navbar = () => {
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center gap-3">
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button variant="ghost" size="sm">
-                Sign In
-              </Button>
-            </motion.div>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button size="sm" className="gap-2">
-                Get Started
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </motion.div>
+            {user ? (
+              <>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Link to="/dashboard">
+                    <Button variant="ghost" size="sm" className="gap-2">
+                      <User className="h-4 w-4" />
+                      Dashboard
+                    </Button>
+                  </Link>
+                </motion.div>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={logout}
+                    className="gap-2"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </Button>
+                </motion.div>
+              </>
+            ) : (
+              <>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Button variant="ghost" size="sm" onClick={handleSignInClick}>
+                    Sign In
+                  </Button>
+                </motion.div>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Button size="sm" className="gap-2">
+                    Get Started
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </motion.div>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -256,13 +303,38 @@ const Navbar = () => {
               </div>
 
               <div className="pt-4 border-t space-y-3">
-                <Button variant="outline" className="w-full">
-                  Sign In
-                </Button>
-                <Button className="w-full gap-2">
-                  Get Started Free
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
+                {user ? (
+                  <>
+                    <Link to="/dashboard">
+                      <Button variant="outline" className="w-full gap-2">
+                        <User className="h-4 w-4" />
+                        Dashboard
+                      </Button>
+                    </Link>
+                    <Button
+                      variant="destructive"
+                      className="w-full gap-2"
+                      onClick={logout}
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Logout
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={handleSignInClick}
+                    >
+                      Sign In
+                    </Button>
+                    <Button className="w-full gap-2">
+                      Get Started Free
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </motion.div>
@@ -425,13 +497,6 @@ const FeaturesSection = () => {
       description: "Seamless communication and task delegation across teams",
       color: "text-orange-500",
       bgColor: "bg-orange-500/10",
-    },
-    {
-      icon: <Cloud className="h-6 w-6" />,
-      title: "Cloud Integration",
-      description: "Connect with your favorite tools and platforms",
-      color: "text-cyan-500",
-      bgColor: "bg-cyan-500/10",
     },
     {
       icon: <Lock className="h-6 w-6" />,
@@ -792,7 +857,6 @@ const Footer = () => {
     Product: ["Features", "Pricing", "API", "Documentation", "Status"],
     Company: ["About", "Blog", "Careers", "Press", "Partners"],
     Legal: ["Privacy", "Terms", "Security", "Cookies", "GDPR"],
-    Resources: ["Help Center", "Community", "Tutorials", "Support", "Contact"],
   };
 
   const socialLinks = [
@@ -928,7 +992,7 @@ export default function Home() {
   );
 }
 
-// Add missing icon component
+// Add missing icon components
 const PlayCircle = ({ className }: { className?: string }) => (
   <svg
     className={className}
