@@ -62,7 +62,7 @@ import { notificationService } from "@/services/notificationService";
 
 // Types
 import type { Task } from "@/types/task.types";
-import type { CompanyMember } from "@/types/companyMember.ts";
+// import type { CompanyMember } from "@/types/companyMember.ts";
 import type { CompanyTeam } from "@/types/companyTeams.ts";
 import type { MainNotification } from "@/types/notification";
 
@@ -805,7 +805,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {notifications.slice(0, 3).map((notification, index) => (
+                {notifications.slice(0, 3).map((notification) => (
                   <div key={notification.id} className="flex items-start gap-2">
                     <div
                       className={`mt-1 ${

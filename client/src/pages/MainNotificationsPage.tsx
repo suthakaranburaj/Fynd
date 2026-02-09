@@ -148,14 +148,14 @@ const StatusBadge = ({ active }: { active: boolean }) => {
 export default function MainNotificationsPage() {
   const [notifications, setNotifications] = useState<MainNotification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [statistics, setStatistics] = useState({
-    total: 0,
-    active: 0,
-    expired: 0,
-    goodCount: 0,
-    normalCount: 0,
-    alertCount: 0,
-  });
+  // const [statistics, setStatistics] = useState({
+  //   total: 0,
+  //   active: 0,
+  //   expired: 0,
+  //   goodCount: 0,
+  //   normalCount: 0,
+  //   alertCount: 0,
+  // });
 
   // Filter state
   const [filters, setFilters] = useState<MainNotificationFilters>({
@@ -242,7 +242,7 @@ export default function MainNotificationsPage() {
       if (response.status) {
         console.log("Fetched notifications:", response.data.notifications);
         setNotifications(response.data.notifications);
-        setStatistics(response.data.statistics);
+        // setStatistics(response.data.statistics);
         setTotalItems(response.data.pagination.totalItems);
         setTotalPages(response.data.pagination.totalPages);
 

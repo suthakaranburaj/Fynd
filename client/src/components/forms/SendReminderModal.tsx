@@ -92,18 +92,18 @@ export default function SendReminderModal({
   };
 
   // Calculate days until due
-  const getDaysUntilDue = () => {
-    try {
-      const due = new Date(task.dueDate);
-      const now = new Date();
-      const diffTime = due.getTime() - now.getTime();
-      return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    } catch {
-      return 0;
-    }
-  };
+  // const getDaysUntilDue = () => {
+  //   try {
+  //     const due = new Date(task.dueDate);
+  //     const now = new Date();
+  //     const diffTime = due.getTime() - now.getTime();
+  //     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  //   } catch {
+  //     return 0;
+  //   }
+  // };
 
-  const daysUntilDue = getDaysUntilDue();
+  // const daysUntilDue = getDaysUntilDue();
   // const isOverdue = daysUntilDue < 0 && task.status !== "completed";
   // const isUrgent = daysUntilDue <= 3 && daysUntilDue >= 0;
 
