@@ -30,7 +30,7 @@ import {
   FolderKanban,
   Bell,
   AlertCircle,
-  CheckCircle,
+  // CheckCircle,
 } from "lucide-react";
 import { CustomPagination } from "@/components/custom_ui";
 import { motion, AnimatePresence } from "framer-motion";
@@ -43,18 +43,18 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+// import {
+//   Popover,
+//   PopoverContent,
+//   PopoverTrigger,
+// } from "@/components/ui/popover";
+// import {
+//   DropdownMenu,
+//   DropdownMenuContent,
+//   DropdownMenuItem,
+//   DropdownMenuTrigger,
+// } from "@/components/ui/dropdown-menu";
+// import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format, parse, isValid, parseISO } from "date-fns";
 import {
   containerVariants,
@@ -625,26 +625,26 @@ export default function TaskManagement() {
   };
 
   // Update task status
-  const handleUpdateStatus = async (taskId: string, status: Task["status"]) => {
-    try {
-      const newStatus = await taskService.updateTaskStatus(taskId, status);
+  // const handleUpdateStatus = async (taskId: string, status: Task["status"]) => {
+  //   try {
+  //     const newStatus = await taskService.updateTaskStatus(taskId, status);
 
-      // Update task in local state
-      setTasks(
-        tasks.map((task) =>
-          task.id === taskId
-            ? { ...task, status: newStatus as Task["status"] }
-            : task,
-        ),
-      );
-      toast.success("Task status updated!");
-    } catch (error: any) {
-      console.error("Error updating task status:", error);
-      toast.error("Failed to update status", {
-        description: error.message || "Please try again",
-      });
-    }
-  };
+  //     // Update task in local state
+  //     setTasks(
+  //       tasks.map((task) =>
+  //         task.id === taskId
+  //           ? { ...task, status: newStatus as Task["status"] }
+  //           : task,
+  //       ),
+  //     );
+  //     toast.success("Task status updated!");
+  //   } catch (error: any) {
+  //     console.error("Error updating task status:", error);
+  //     toast.error("Failed to update status", {
+  //       description: error.message || "Please try again",
+  //     });
+  //   }
+  // };
 
   // Refresh data
   const handleRefresh = () => {
@@ -654,19 +654,19 @@ export default function TaskManagement() {
   };
 
   // Prepare task data for form
-  const prepareTaskForForm = (task: Task) => {
-    return {
-      title: task.title || "",
-      description: task.description || "",
-      dueDate: parseISO(task.dueDate),
-      assignedTo: task.assignedTo?.id || "",
-      team: task.team?.id || "",
-      priority: task.priority || "medium",
-      tags: task.tags || [],
-      project: task.project || "",
-      status: task.status || "pending",
-    };
-  };
+  // const prepareTaskForForm = (task: Task) => {
+  //   return {
+  //     title: task.title || "",
+  //     description: task.description || "",
+  //     dueDate: parseISO(task.dueDate),
+  //     assignedTo: task.assignedTo?.id || "",
+  //     team: task.team?.id || "",
+  //     priority: task.priority || "medium",
+  //     tags: task.tags || [],
+  //     project: task.project || "",
+  //     status: task.status || "pending",
+  //   };
+  // };
 
   // Active filters count
   const activeFiltersCount = Object.entries(filters).filter(

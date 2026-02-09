@@ -10,11 +10,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Bell, AlertCircle, Clock, Send, Users, User } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+// import { Input } from "@/components/ui/input";
+import { Bell, AlertCircle, Send } from "lucide-react";
+// import { Badge } from "@/components/ui/badge";
+// import { Card } from "@/components/ui/card";
+// import { Separator } from "@/components/ui/separator";
 import type { Task } from "@/types/task.types";
 
 interface SendReminderModalProps {
@@ -66,8 +66,8 @@ export default function SendReminderModal({
       day: "numeric",
     });
 
-    const assignedTo =
-      task.assignedTo?.fullName || task.team?.teamName || "Assignee";
+    // const assignedTo =
+    //   task.assignedTo?.fullName || task.team?.teamName || "Assignee";
 
     if (task.status === "completed") {
       return `Follow-up: The task "${task.title}" was completed. Please review if any further action is needed.`;
@@ -104,8 +104,8 @@ export default function SendReminderModal({
   };
 
   const daysUntilDue = getDaysUntilDue();
-  const isOverdue = daysUntilDue < 0 && task.status !== "completed";
-  const isUrgent = daysUntilDue <= 3 && daysUntilDue >= 0;
+  // const isOverdue = daysUntilDue < 0 && task.status !== "completed";
+  // const isUrgent = daysUntilDue <= 3 && daysUntilDue >= 0;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>

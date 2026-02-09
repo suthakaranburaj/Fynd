@@ -3,7 +3,7 @@ import {
   Calendar as CalendarIcon,
   RefreshCw,
   X,
-  Users,
+  // Users,
   Tag,
   FolderKanban,
   Check,
@@ -42,7 +42,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { type Task, type TaskFormData } from "@/types/task.types";
+import { type Task } from "@/types/task.types";
 import type { CompanyMember } from "@/types/companyMember.ts";
 import type { CompanyTeam } from "@/types/companyTeams.ts";
 import { toast } from "sonner";

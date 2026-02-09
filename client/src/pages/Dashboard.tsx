@@ -23,7 +23,7 @@ import {
   Plus,
   MoreVertical,
   Filter,
-  Download,
+  // Download,
   RefreshCw,
   Mail,
   Sparkles,
@@ -33,12 +33,12 @@ import {
   TrendingUp,
   AlertTriangle,
 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
+  // DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -266,7 +266,7 @@ export default function Dashboard() {
   });
 
   const [myTasks, setMyTasks] = useState<Task[]>([]);
-  const [teamMembers, setTeamMembers] = useState<CompanyMember[]>([]);
+  // const [teamMembers, setTeamMembers] = useState<CompanyMember[]>([]);
   const [teams, setTeams] = useState<CompanyTeam[]>([]);
   const [notifications, setNotifications] = useState<MainNotification[]>([]);
   const [upcomingCalendar, setUpcomingCalendar] = useState<any[]>([]);
@@ -443,7 +443,7 @@ export default function Dashboard() {
       }));
 
       setMyTasks(myTasksData);
-      setTeamMembers(members);
+      // setTeamMembers(members);
       setTeams(teamsData);
       setNotifications(notificationsData);
 
@@ -474,7 +474,7 @@ export default function Dashboard() {
       });
 
       setMyTasks(localTasks.slice(0, 4));
-      setTeamMembers(localMembers.slice(0, 10));
+      // setTeamMembers(localMembers.slice(0, 10));
       setTeams(localTeams.slice(0, 5));
     } finally {
       setIsLoading(false);

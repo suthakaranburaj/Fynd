@@ -28,7 +28,7 @@ import {
   Calendar,
   MoreVertical,
   FolderKanban,
-  Users,
+  // Users,
 } from "lucide-react";
 import { CustomPagination } from "@/components/custom_ui";
 import { motion, AnimatePresence } from "framer-motion";
@@ -64,7 +64,7 @@ import type {
   ReminderType,
   ReminderPriority,
   ReminderStatus,
-  Sender,
+  // Sender,
 } from "@/types/reminder.types";
 
 // Loading skeleton component
@@ -297,7 +297,7 @@ export default function Reminders() {
   const [searchInput, setSearchInput] = useState<string>("");
 
   // Filter options
-  const [filterOptions, setFilterOptions] = useState({
+  const [filterOptions] = useState({
     types: ["task", "meeting", "deadline", "notification", "system", "project"],
     priorities: ["low", "medium", "high"],
     statuses: ["unread", "read", "dismissed"],

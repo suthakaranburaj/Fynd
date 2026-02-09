@@ -21,7 +21,7 @@ import {
   Bell,
   Calendar,
   Clock,
-  Users,
+  // Users,
   Mail,
   Copy,
   Edit,
@@ -29,9 +29,9 @@ import {
   Eye,
   EyeOff,
   Plus,
-  Save,
-  X,
-  CheckCircle,
+  // Save,
+  // X,
+  // CheckCircle,
   AlertTriangle,
   RefreshCw,
   ChevronDown,
@@ -57,10 +57,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  // DialogTrigger,
 } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+// import { Separator } from "@/components/ui/separator";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { CustomAlert } from "@/components/custom_ui";
@@ -445,7 +445,7 @@ const TemplateFormModal: React.FC<TemplateFormModalProps> = ({
     },
   );
 
-  const [previewData, setPreviewData] = useState({
+  const [previewData] = useState({
     task_title: "Complete Project Report",
     task_description:
       "Finalize the Q4 project report with all metrics and analysis",
@@ -816,7 +816,7 @@ export default function MessageTemplates({
     useState<MessageTemplate[]>(DEFAULT_TEMPLATES);
   const [filteredTemplates, setFilteredTemplates] =
     useState<MessageTemplate[]>(DEFAULT_TEMPLATES);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Modal states

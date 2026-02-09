@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight,
   CheckCircle,
-  Clock,
+  // Clock,
   Users,
   Bell,
   BarChart3,
@@ -27,7 +27,7 @@ import {
   Sparkles,
   Target,
   BarChart,
-  Cloud,
+  // Cloud,
   Lock,
   User,
   LogOut,
@@ -50,7 +50,7 @@ import {
   fadeInUp,
   staggerContainer,
   fadeIn,
-  slideIn,
+  // slideIn,
 } from "@/components/FramerVariants";
 import { useAuth } from "@/contexts/AuthContext";
 

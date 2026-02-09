@@ -60,7 +60,7 @@ function CompanyTeamFormModal({
   });
 
   const [membersOpen, setMembersOpen] = useState(false);
-  const [uniqueDepartments, setUniqueDepartments] = useState<string[]>([
+  const [uniqueDepartments] = useState<string[]>([
     "Engineering",
     "Design",
     "Product",
@@ -151,10 +151,10 @@ function CompanyTeamFormModal({
     }));
   };
 
-  const getMemberDisplay = (memberId: string) => {
-    const member = members.find((m) => m.id === memberId);
-    return member ? `${member.fullName} (${member.email})` : "Unknown Member";
-  };
+  // const getMemberDisplay = (memberId: string) => {
+  //   const member = members.find((m) => m.id === memberId);
+  //   return member ? `${member.fullName} (${member.email})` : "Unknown Member";
+  // };
 
   const getTeamLeadDisplay = (memberId: string | undefined) => {
     if (!memberId) return "Select team lead";

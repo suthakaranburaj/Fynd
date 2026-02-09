@@ -15,11 +15,11 @@ interface TimeState {
   ampm: string;
 }
 
-interface UserData {
-  fullName?: string;
-  email?: string;
-  gmail?: string;
-}
+// interface UserData {
+//   fullName?: string;
+//   email?: string;
+//   gmail?: string;
+// }
 
 interface BreadcrumbPage {
   label: string;

@@ -3,14 +3,14 @@ import { motion } from "framer-motion";
 import {
   Card,
   CardContent,
-  CardDescription,
+  // CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+// import { Input } from "@/components/ui/input";
+// import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -32,10 +32,10 @@ import {
   Calendar as CalendarIcon,
   Plus,
   Filter,
-  Clock,
+  // Clock,
   Users,
   AlertCircle,
-  CheckCircle,
+  // CheckCircle,
   Edit,
   Trash2,
   Loader2,
@@ -44,7 +44,7 @@ import {
   MessageSquare,
   Paperclip,
   User,
-  X,
+  // X,
 } from "lucide-react";
 import {
   format,
@@ -661,7 +661,7 @@ export default function Calendar() {
     setIsTaskModalOpen(true);
   };
 
-  const handleAddTask = (date: Date) => {
+  const handleAddTask = () => {
     setEditingTask(null);
     setIsTaskFormOpen(true);
   };

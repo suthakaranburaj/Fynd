@@ -14,9 +14,9 @@ import {
   Filter,
   Search,
   X,
-  Calendar,
+  // Calendar,
   Plus,
-  Clock,
+  // Clock,
   Users,
   Edit,
   Trash2,
@@ -37,13 +37,13 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { format, parse, isValid, parseISO } from "date-fns";
+// import {
+//   Popover,
+//   PopoverContent,
+//   PopoverTrigger,
+// } from "@/components/ui/popover";
+// import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { parseISO } from "date-fns";
 import {
   containerVariants,
   itemVariants,
@@ -202,7 +202,7 @@ export default function CompanyTeams() {
   // Local state for immediate input values (before debounce)
   const [searchInput, setSearchInput] = useState<string>("");
   const [teamNameInput, setTeamNameInput] = useState<string>("");
-  const [createdAtInput, setCreatedAtInput] = useState<string>("");
+  // const [createdAtInput, setCreatedAtInput] = useState<string>("");
 
   // Sort state
   const [sortConfig, setSortConfig] = useState<{
@@ -249,16 +249,16 @@ export default function CompanyTeams() {
   };
 
   // Format date for short display
-  const formatDateShort = (dateString: string) => {
-    if (!dateString) return "N/A";
-    try {
-      const date = parseISO(dateString);
-      if (isNaN(date.getTime())) return "Invalid date";
-      return format(date, "MMM d, yyyy");
-    } catch {
-      return "Invalid date";
-    }
-  };
+  // const formatDateShort = (dateString: string) => {
+  //   if (!dateString) return "N/A";
+  //   try {
+  //     const date = parseISO(dateString);
+  //     if (isNaN(date.getTime())) return "Invalid date";
+  //     return format(date, "MMM d, yyyy");
+  //   } catch {
+  //     return "Invalid date";
+  //   }
+  // };
 
   // Fetch members for form
   const fetchMembers = async () => {
@@ -366,7 +366,7 @@ export default function CompanyTeams() {
     });
     setSearchInput("");
     setTeamNameInput("");
-    setCreatedAtInput("");
+    // setCreatedAtInput("");
     setSortConfig({ key: "createdAt", direction: "desc" });
   };
 
@@ -520,16 +520,16 @@ export default function CompanyTeams() {
   };
 
   // Prepare team data for form
-  const prepareTeamForForm = (team: CompanyTeam) => {
-    return {
-      teamName: team.teamName || "",
-      description: team.description || "",
-      members: team.members.map((member) => member.id),
-      department: team.department || "",
-      teamLead: team.teamLead?.id || "",
-      status: team.status || "active",
-    };
-  };
+  // const prepareTeamForForm = (team: CompanyTeam) => {
+  //   return {
+  //     teamName: team.teamName || "",
+  //     description: team.description || "",
+  //     members: team.members.map((member) => member.id),
+  //     department: team.department || "",
+  //     teamLead: team.teamLead?.id || "",
+  //     status: team.status || "active",
+  //   };
+  // };
 
   // Active filters count
   const activeFiltersCount = Object.entries(filters).filter(
