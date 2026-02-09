@@ -752,21 +752,47 @@ export const updateTask = asyncHandler(async (req, res) => {
     }
 
     if (status !== undefined && status !== oldStatus) {
-        const notificationUsers = [task.assignedBy];
+        let notificationUsers = [];
+        
+        // Add task creator
+        if (task.assignedBy && task.assignedBy.toString() !== currentUser._id.toString()) {
+            notificationUsers.push(task.assignedBy);
+        }
+        
+        // Add assigned user if exists and not the current user
         if (task.assignedTo && task.assignedTo.toString() !== currentUser._id.toString()) {
             notificationUsers.push(task.assignedTo);
         }
-        console.log(notificationUsers, "Users to notify for status change");
-        await createUserNotification(
-            "Task Status Updated",
-            `Task "${task.title}" status changed from ${oldStatus} to ${status}`,
-            notificationUsers.filter(
-                (id, index, self) =>
-                    id && self.findIndex((t) => t?.toString() === id?.toString()) === index
-            ),
-            "normal",
-            currentUser._id
+        
+        // If task is assigned to team (and no specific user), notify all team members
+        if (task.assignedToType === 'team' && !task.assignedTo && task.team) {
+            const teamMembers = await TeamMember.find({
+                team: task.team,
+                isActive: true,
+                user: { $ne: currentUser._id } // Exclude current user
+            }).select("user");
+            
+            if (teamMembers.length > 0) {
+                const teamMemberIds = teamMembers.map((member) => member.user);
+                notificationUsers.push(...teamMemberIds);
+            }
+        }
+        
+        // Remove duplicates and null/undefined values
+        const uniqueUsers = notificationUsers.filter(
+            (id, index, self) =>
+                id && self.findIndex((t) => t?.toString() === id?.toString()) === index
         );
+
+        if (uniqueUsers.length > 0) {
+            await createUserNotification(
+                "Task Status Updated",
+                `Task "${task.title}" status changed from ${oldStatus} to ${status}`,
+                uniqueUsers,
+                "normal",
+                currentUser._id
+            );
+        }
     }
 
     // Populate updated task data
@@ -851,12 +877,39 @@ export const deleteTask = asyncHandler(async (req, res) => {
     task.updatedAt = new Date();
     await task.save();
 
-    // Notify assigned user about deletion
+    // Notify about deletion
+    let notificationUsers = [];
+    
+    // Notify assigned user if exists and not the current user
     if (task.assignedTo && task.assignedTo.toString() !== currentUser._id.toString()) {
+        notificationUsers.push(task.assignedTo);
+    }
+    
+    // If task is assigned to team (and no specific user), notify all team members
+    if (task.assignedToType === 'team' && !task.assignedTo && task.team) {
+        const teamMembers = await TeamMember.find({
+            team: task.team,
+            isActive: true,
+            user: { $ne: currentUser._id } // Exclude current user
+        }).select("user");
+        
+        if (teamMembers.length > 0) {
+            const teamMemberIds = teamMembers.map((member) => member.user);
+            notificationUsers.push(...teamMemberIds);
+        }
+    }
+    
+    // Remove duplicates
+    const uniqueUsers = notificationUsers.filter(
+        (id, index, self) =>
+            id && self.findIndex((t) => t?.toString() === id?.toString()) === index
+    );
+
+    if (uniqueUsers.length > 0) {
         await createUserNotification(
             "Task Deleted",
             `Task "${task.title}" has been deleted by the creator`,
-            [task.assignedTo],
+            uniqueUsers,
             "alert",
             currentUser._id
         );

@@ -23,7 +23,7 @@ export const navItems: NavItem[] = [
   {
     icon: Home,
     label: "Dashboard",
-    href: "/",
+    href: "/dashboard",
     id: "dashboard",
     pages: "Home",
   },
@@ -55,13 +55,13 @@ export const navItems: NavItem[] = [
     id: "company-teams",
     pages: "Home, Company, Teams",
   },
-  {
-    icon: MessageSquare,
-    label: "Message Templates",
-    href: "/templates",
-    id: "templates",
-    pages: "Home, Templates",
-  },
+  // {
+  //   icon: MessageSquare,
+  //   label: "Message Templates",
+  //   href: "/templates",
+  //   id: "templates",
+  //   pages: "Home, Templates",
+  // },
   {
     icon: Calendar,
     label: "Schedule & Calendar",
@@ -77,7 +77,7 @@ export const navItems: NavItem[] = [
   //   pages: "Home, Profile",
   // },
   {
-    icon:Bell,
+    icon: Bell,
     label: "Notifications",
     href: "/notifications",
     id: "notifications",

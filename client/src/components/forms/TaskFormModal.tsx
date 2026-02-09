@@ -42,20 +42,16 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import {
-  type Task,
-  type TaskFormData,
-  type TaskAssignee,
-  type TaskTeam,
-} from "@/types/task.types";
+import { type Task, type TaskFormData } from "@/types/task.types";
 import type { CompanyMember } from "@/types/companyMember.ts";
 import type { CompanyTeam } from "@/types/companyTeams.ts";
-import {toast} from "sonner"
+import { toast } from "sonner";
+
 interface TaskFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editingTask?: Task | null;
-  onSave: (data: TaskFormData, id?: string) => Promise<void>;
+  onSave: (data: any, id?: string) => Promise<void>;
   isSubmitting: boolean;
   members: CompanyMember[];
   teams: CompanyTeam[];
@@ -70,12 +66,12 @@ function TaskFormModal({
   members,
   teams,
 }: TaskFormModalProps) {
-  const [formData, setFormData] = useState<TaskFormData>({
+  const [formData, setFormData] = useState<any>({
     title: "",
     description: "",
     dueDate: undefined,
-    assignedTo: "none",
-    team: "none",
+    assignedTo: "unassigned",
+    team: "noteam",
     priority: "medium",
     tags: [],
     project: "",
@@ -140,8 +136,8 @@ function TaskFormModal({
         title: editingTask.title,
         description: editingTask.description || "",
         dueDate: dueDate,
-        assignedTo: editingTask.assignedTo?.id || "none",
-        team: editingTask.team?.id || "none",
+        assignedTo: editingTask.assignedTo?.id || "unassigned",
+        team: editingTask.team?.id || "noteam",
         priority: editingTask.priority,
         tags: editingTask.tags || [],
         project: editingTask.project || "",
@@ -153,8 +149,8 @@ function TaskFormModal({
         title: "",
         description: "",
         dueDate: undefined,
-        assignedTo: "none",
-        team: "none",
+        assignedTo: "unassigned",
+        team: "noteam",
         priority: "medium",
         tags: [],
         project: "",
@@ -199,7 +195,7 @@ function TaskFormModal({
   const handleRemoveTag = (tagToRemove: string) => {
     setFormData({
       ...formData,
-      tags: formData.tags.filter((tag) => tag !== tagToRemove),
+      tags: formData.tags.filter((tag: string) => tag !== tagToRemove),
     });
   };
 
@@ -212,11 +208,11 @@ function TaskFormModal({
 
   // Filter available members based on selected team and search
   const filteredMembers =
-    formData.team !== "none"
+    formData.team !== "noteam" && formData.team !== "unassigned"
       ? members.filter((member) =>
           teams
             .find((t) => t.id === formData.team)
-            ?.members.some((m) => m.id === member.id),
+            ?.members?.some((m: any) => m.id === member.id),
         )
       : members;
 
@@ -243,11 +239,12 @@ function TaskFormModal({
       return;
     }
 
-    // Prepare data for API (convert "none" to empty string)
+    // Prepare data for API (convert special values to empty string)
     const apiData = {
       ...formData,
-      assignedTo: formData.assignedTo === "none" ? "" : formData.assignedTo,
-      team: formData.team === "none" ? "" : formData.team,
+      assignedTo:
+        formData.assignedTo === "unassigned" ? "" : formData.assignedTo,
+      team: formData.team === "noteam" ? "" : formData.team,
       dueDate: formData.dueDate,
     };
 
@@ -408,13 +405,13 @@ function TaskFormModal({
                 </div>
 
                 {/* Status */}
-                {/* <div className="space-y-2">
+                <div className="space-y-2">
                   <Label htmlFor="status" className="text-sm font-medium">
                     Status
                   </Label>
                   <Select
                     value={formData.status}
-                    onValueChange={(value: Task["status"]) =>
+                    onValueChange={(value: string) =>
                       setFormData({ ...formData, status: value })
                     }
                     disabled={isSubmitting}
@@ -439,7 +436,7 @@ function TaskFormModal({
                       ))}
                     </SelectContent>
                   </Select>
-                </div> */}
+                </div>
               </div>
 
               {/* Status Quick Actions */}
@@ -527,7 +524,8 @@ function TaskFormModal({
                         className="w-full justify-between"
                         disabled={isSubmitting}
                       >
-                        {formData.team !== "none"
+                        {formData.team !== "noteam" &&
+                        formData.team !== "unassigned"
                           ? teams.find((team) => team.id === formData.team)
                               ?.teamName
                           : "Select team (optional)"}
@@ -546,12 +544,12 @@ function TaskFormModal({
                           <CommandEmpty>No team found.</CommandEmpty>
                           <CommandGroup>
                             <CommandItem
-                              value="none"
+                              value="noteam"
                               onSelect={() => {
                                 setFormData({
                                   ...formData,
-                                  team: "none",
-                                  assignedTo: "none",
+                                  team: "noteam",
+                                  assignedTo: "unassigned",
                                 });
                                 setOpenTeamDropdown(false);
                               }}
@@ -559,7 +557,7 @@ function TaskFormModal({
                               <Check
                                 className={cn(
                                   "mr-2 h-4 w-4",
-                                  formData.team === "none"
+                                  formData.team === "noteam"
                                     ? "opacity-100"
                                     : "opacity-0",
                                 )}
@@ -574,7 +572,7 @@ function TaskFormModal({
                                   setFormData({
                                     ...formData,
                                     team: team.id,
-                                    assignedTo: "none",
+                                    assignedTo: "unassigned",
                                   });
                                   setOpenTeamDropdown(false);
                                 }}
@@ -615,7 +613,7 @@ function TaskFormModal({
                         className="w-full justify-between"
                         disabled={isSubmitting || filteredMembers.length === 0}
                       >
-                        {formData.assignedTo !== "none"
+                        {formData.assignedTo !== "unassigned"
                           ? members.find(
                               (member) => member.id === formData.assignedTo,
                             )?.fullName
@@ -637,11 +635,11 @@ function TaskFormModal({
                           <CommandEmpty>No user found.</CommandEmpty>
                           <CommandGroup>
                             <CommandItem
-                              value="none"
+                              value="unassigned"
                               onSelect={() => {
                                 setFormData({
                                   ...formData,
-                                  assignedTo: "none",
+                                  assignedTo: "unassigned",
                                 });
                                 setOpenMemberDropdown(false);
                               }}
@@ -649,7 +647,7 @@ function TaskFormModal({
                               <Check
                                 className={cn(
                                   "mr-2 h-4 w-4",
-                                  formData.assignedTo === "none"
+                                  formData.assignedTo === "unassigned"
                                     ? "opacity-100"
                                     : "opacity-0",
                                 )}
@@ -684,11 +682,13 @@ function TaskFormModal({
                       </Command>
                     </PopoverContent>
                   </Popover>
-                  {formData.team !== "none" && filteredMembers.length === 0 && (
-                    <p className="text-xs text-red-500 mt-1">
-                      No members found in the selected team
-                    </p>
-                  )}
+                  {formData.team !== "noteam" &&
+                    formData.team !== "unassigned" &&
+                    filteredMembers.length === 0 && (
+                      <p className="text-xs text-red-500 mt-1">
+                        No members found in the selected team
+                      </p>
+                    )}
                 </div>
               </div>
 
@@ -747,7 +747,7 @@ function TaskFormModal({
                 {/* Selected Tags */}
                 {formData.tags.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2">
-                    {formData.tags.map((tag) => (
+                    {formData.tags.map((tag: string) => (
                       <Badge
                         key={tag}
                         variant="secondary"
@@ -771,14 +771,15 @@ function TaskFormModal({
               </div>
 
               {/* Validation Message */}
-              {formData.assignedTo === "none" && formData.team === "none" && (
-                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                  <p className="text-sm text-yellow-800">
-                    Note: Task must be assigned to either a user or a team. If
-                    left unassigned, it will be assigned to you.
-                  </p>
-                </div>
-              )}
+              {formData.assignedTo === "unassigned" &&
+                formData.team === "noteam" && (
+                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                    <p className="text-sm text-yellow-800">
+                      Note: Task must be assigned to either a user or a team. If
+                      left unassigned, it will be assigned to you.
+                    </p>
+                  </div>
+                )}
 
               {/* Current Status Display */}
               {currentStatus && (

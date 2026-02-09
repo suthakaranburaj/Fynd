@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -26,7 +25,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   ChevronLeft,
@@ -34,17 +32,19 @@ import {
   Calendar as CalendarIcon,
   Plus,
   Filter,
-  Search,
   Clock,
   Users,
   AlertCircle,
   CheckCircle,
-  MoreVertical,
   Edit,
   Trash2,
   Loader2,
-  Eye,
-  EyeOff,
+  FolderKanban,
+  Tag,
+  MessageSquare,
+  Paperclip,
+  User,
+  X,
 } from "lucide-react";
 import {
   format,
@@ -59,122 +59,25 @@ import {
   subMonths,
   isToday,
   parseISO,
-  addDays,
 } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { taskService } from "@/services/taskService";
+import { companyMemberService } from "@/services/companyMemberService";
+import { teamService } from "@/services/teamService";
+import type { Task } from "@/types/task.types";
+import type { CompanyMember } from "@/types/companyMember.ts";
+import type { CompanyTeam } from "@/types/companyTeams.ts";
+import { TaskStatusBadge, PriorityBadge } from "../components/TaskBadges";
+import TaskFormModal from "../components/forms/TaskFormModal";
 
 // Types
-interface Task {
-  id: string;
-  title: string;
-  description?: string;
-  dueDate: string;
-  assignedTo: string;
-  assignedBy: string;
-  status: "pending" | "in-progress" | "completed" | "overdue";
-  priority: "low" | "medium" | "high";
-  tags?: string[];
-  project?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 interface CalendarDay {
   date: Date;
   isCurrentMonth: boolean;
   isToday: boolean;
   tasks: Task[];
 }
-
-interface TeamMember {
-  id: string;
-  name: string;
-  email: string;
-  avatar?: string;
-}
-
-// Mock data - In production, this would come from your API
-const MOCK_TASKS: Task[] = [
-  {
-    id: "1",
-    title: "Design Review Meeting",
-    description: "Review design mockups for new dashboard",
-    dueDate: new Date().toISOString(),
-    assignedTo: "john@example.com",
-    assignedBy: "admin@example.com",
-    status: "pending",
-    priority: "high",
-    tags: ["design", "meeting"],
-    project: "Dashboard Redesign",
-    createdAt: "2024-02-01",
-    updatedAt: "2024-02-01",
-  },
-  {
-    id: "2",
-    title: "API Documentation",
-    description: "Write API documentation for new endpoints",
-    dueDate: addDays(new Date(), 1).toISOString(),
-    assignedTo: "sarah@example.com",
-    assignedBy: "tech-lead@example.com",
-    status: "in-progress",
-    priority: "medium",
-    tags: ["backend", "documentation"],
-    project: "API v2",
-    createdAt: "2024-02-02",
-    updatedAt: "2024-02-02",
-  },
-  {
-    id: "3",
-    title: "Bug Fix - Login Issue",
-    description: "Fix authentication bug on mobile devices",
-    dueDate: addDays(new Date(), 2).toISOString(),
-    assignedTo: "mike@example.com",
-    assignedBy: "qa@example.com",
-    status: "completed",
-    priority: "high",
-    tags: ["bug", "frontend"],
-    project: "Mobile App",
-    createdAt: "2024-02-01",
-    updatedAt: "2024-02-03",
-  },
-  {
-    id: "4",
-    title: "Client Presentation",
-    description: "Prepare slides for quarterly review",
-    dueDate: addDays(new Date(), -1).toISOString(),
-    assignedTo: "lisa@example.com",
-    assignedBy: "ceo@example.com",
-    status: "overdue",
-    priority: "high",
-    tags: ["client", "presentation"],
-    project: "Business Development",
-    createdAt: "2024-01-28",
-    updatedAt: "2024-02-01",
-  },
-  {
-    id: "5",
-    title: "Database Optimization",
-    description: "Optimize queries and add indexes",
-    dueDate: addDays(new Date(), 5).toISOString(),
-    assignedTo: "alex@example.com",
-    assignedBy: "dba@example.com",
-    status: "pending",
-    priority: "medium",
-    tags: ["database", "backend"],
-    project: "Infrastructure",
-    createdAt: "2024-02-03",
-    updatedAt: "2024-02-03",
-  },
-];
-
-const MOCK_TEAM_MEMBERS: TeamMember[] = [
-  { id: "1", name: "John Doe", email: "john@example.com" },
-  { id: "2", name: "Sarah Smith", email: "sarah@example.com" },
-  { id: "3", name: "Mike Johnson", email: "mike@example.com" },
-  { id: "4", name: "Lisa Wang", email: "lisa@example.com" },
-  { id: "5", name: "Alex Brown", email: "alex@example.com" },
-];
 
 // Skeleton loading component
 const CalendarSkeleton = () => {
@@ -284,41 +187,6 @@ const CalendarSkeleton = () => {
   );
 };
 
-// Task status badge component
-const TaskStatusBadge = ({ status }: { status: Task["status"] }) => {
-  const variants = {
-    pending: {
-      bg: "bg-yellow-100 dark:bg-yellow-900/30",
-      text: "text-yellow-800 dark:text-yellow-300",
-      icon: Clock,
-    },
-    "in-progress": {
-      bg: "bg-blue-100 dark:bg-blue-900/30",
-      text: "text-blue-800 dark:text-blue-300",
-      icon: Clock,
-    },
-    completed: {
-      bg: "bg-green-100 dark:bg-green-900/30",
-      text: "text-green-800 dark:text-green-300",
-      icon: CheckCircle,
-    },
-    overdue: {
-      bg: "bg-red-100 dark:bg-red-900/30",
-      text: "text-red-800 dark:text-red-300",
-      icon: AlertCircle,
-    },
-  };
-
-  const { bg, text, icon: Icon } = variants[status];
-
-  return (
-    <Badge variant="secondary" className={`${bg} ${text} gap-1`}>
-      <Icon className="h-3 w-3" />
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </Badge>
-  );
-};
-
 // Priority indicator component
 const PriorityIndicator = ({ priority }: { priority: Task["priority"] }) => {
   const colors = {
@@ -411,7 +279,7 @@ const DayCell = ({
             <div className="flex items-center gap-2 mt-1">
               <TaskStatusBadge status={task.status} />
               <span className="text-xs text-gray-500 truncate">
-                {task.assignedTo.split("@")[0]}
+                {task.assignedTo?.fullName?.split(" ")[0] || "Unassigned"}
               </span>
             </div>
           </motion.div>
@@ -437,6 +305,34 @@ const TaskDetailModal = ({
 }) => {
   if (!task) return null;
 
+  const formatDateTime = (dateString: string) => {
+    if (!dateString) return "N/A";
+    try {
+      const date = parseISO(dateString);
+      if (isNaN(date.getTime())) return "Invalid date";
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return "Invalid date";
+    }
+  };
+
+  const formatDateShort = (dateString: string) => {
+    if (!dateString) return "N/A";
+    try {
+      const date = parseISO(dateString);
+      if (isNaN(date.getTime())) return "Invalid date";
+      return format(date, "MMM d, yyyy");
+    } catch {
+      return "Invalid date";
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl">
@@ -445,7 +341,7 @@ const TaskDetailModal = ({
             <div>
               <DialogTitle className="text-2xl">{task.title}</DialogTitle>
               <DialogDescription className="mt-2">
-                {task.description}
+                {task.description || "No description"}
               </DialogDescription>
             </div>
             <div className="flex gap-2">
@@ -481,46 +377,77 @@ const TaskDetailModal = ({
               <h4 className="text-sm font-medium text-gray-500 mb-2">
                 Priority
               </h4>
-              <PriorityIndicator priority={task.priority} />
+              <PriorityBadge priority={task.priority} />
             </div>
             <div>
               <h4 className="text-sm font-medium text-gray-500 mb-2">
                 Due Date
               </h4>
-              <p className="text-sm">
-                {format(parseISO(task.dueDate), "PPP 'at' p")}
-              </p>
-            </div>
-          </div>
-
-          {/* Assignment Details */}
-          <div className="space-y-4">
-            <div>
-              <h4 className="text-sm font-medium text-gray-500 mb-2">
-                Assigned To
-              </h4>
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-                  <Users className="h-4 w-4" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">{task.assignedTo}</p>
-                  <p className="text-xs text-gray-500">Team Member</p>
-                </div>
-              </div>
-            </div>
-            <div>
-              <h4 className="text-sm font-medium text-gray-500 mb-2">
-                Assigned By
-              </h4>
-              <p className="text-sm">{task.assignedBy}</p>
+              <p className="text-sm">{formatDateShort(task.dueDate)}</p>
             </div>
             {task.project && (
               <div>
                 <h4 className="text-sm font-medium text-gray-500 mb-2">
                   Project
                 </h4>
-                <Badge variant="outline">{task.project}</Badge>
+                <Badge variant="outline" className="gap-1">
+                  <FolderKanban className="h-3 w-3" />
+                  {task.project}
+                </Badge>
+              </div>
+            )}
+          </div>
+
+          {/* Assignment Details */}
+          <div className="space-y-4">
+            {task.assignedTo ? (
+              <div>
+                <h4 className="text-sm font-medium text-gray-500 mb-2">
+                  Assigned To
+                </h4>
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                    <User className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">
+                      {task.assignedTo.fullName}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {task.assignedTo.email}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : task.team ? (
+              <div>
+                <h4 className="text-sm font-medium text-gray-500 mb-2">
+                  Assigned To Team
+                </h4>
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
+                    <Users className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">{task.team.teamName}</p>
+                    <p className="text-xs text-gray-500">Team Assignment</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <h4 className="text-sm font-medium text-gray-500 mb-2">
+                  Assigned To
+                </h4>
+                <p className="text-sm text-gray-500">Unassigned</p>
+              </div>
+            )}
+            {task.createdAt && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-500 mb-2">
+                  Created At
+                </h4>
+                <p className="text-sm">{formatDateTime(task.createdAt)}</p>
               </div>
             )}
           </div>
@@ -532,7 +459,8 @@ const TaskDetailModal = ({
             <h4 className="text-sm font-medium text-gray-500 mb-2">Tags</h4>
             <div className="flex flex-wrap gap-2">
               {task.tags.map((tag) => (
-                <Badge key={tag} variant="secondary">
+                <Badge key={tag} variant="secondary" className="gap-1">
+                  <Tag className="h-3 w-3" />
                   {tag}
                 </Badge>
               ))}
@@ -540,14 +468,35 @@ const TaskDetailModal = ({
           </div>
         )}
 
+        {/* Attachments and Comments */}
+        <div className="mt-6 grid grid-cols-2 gap-4">
+          {task.attachments.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Paperclip className="h-4 w-4 text-gray-500" />
+              <span className="text-sm">
+                {task.attachments.length} attachment
+                {task.attachments.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+          )}
+          {task.comments.length > 0 && (
+            <div className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4 text-gray-500" />
+              <span className="text-sm">
+                {task.comments.length} comment
+                {task.comments.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+          )}
+        </div>
+
         <DialogFooter className="mt-6">
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
           <Button
             onClick={() => {
-              // Trigger Boltic automation for follow-up
-              toast.success("Follow-up reminder scheduled via Boltic");
+              toast.success("Follow-up reminder scheduled");
             }}
           >
             Schedule Follow-up
@@ -558,215 +507,111 @@ const TaskDetailModal = ({
   );
 };
 
-// Create/Edit task form component
-const TaskForm = ({
-  isOpen,
-  onClose,
-  onSubmit,
-  initialData,
-  defaultDate,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (task: Partial<Task>) => void;
-  initialData?: Partial<Task>;
-  defaultDate?: Date;
-}) => {
-  const [formData, setFormData] = useState<Partial<Task>>({
-    title: "",
-    description: "",
-    dueDate: defaultDate
-      ? format(defaultDate, "yyyy-MM-dd")
-      : format(new Date(), "yyyy-MM-dd"),
-    assignedTo: "",
-    priority: "medium" as const,
-    status: "pending" as const,
-    ...initialData,
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formData);
-    onClose();
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {initialData ? "Edit Task" : "Create New Task"}
-          </DialogTitle>
-          <DialogDescription>
-            {initialData
-              ? "Update task details"
-              : "Add a new task to the calendar"}
-          </DialogDescription>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="title">Title *</Label>
-            <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) =>
-                setFormData({ ...formData, title: e.target.value })
-              }
-              required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Input
-              id="description"
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="dueDate">Due Date</Label>
-              <Input
-                id="dueDate"
-                type="date"
-                value={formData.dueDate}
-                onChange={(e) =>
-                  setFormData({ ...formData, dueDate: e.target.value })
-                }
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="assignedTo">Assign To</Label>
-              <Select
-                value={formData.assignedTo}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, assignedTo: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select team member" />
-                </SelectTrigger>
-                <SelectContent>
-                  {MOCK_TEAM_MEMBERS.map((member) => (
-                    <SelectItem key={member.id} value={member.email}>
-                      {member.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="priority">Priority</Label>
-              <Select
-                value={formData.priority}
-                onValueChange={(value: Task["priority"]) =>
-                  setFormData({ ...formData, priority: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="status">Status</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value: Task["status"]) =>
-                  setFormData({ ...formData, status: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="in-progress">In Progress</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <DialogFooter className="mt-6">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit">
-              {initialData ? "Update Task" : "Create Task"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-  const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState<Partial<Task> | undefined>();
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [members, setMembers] = useState<CompanyMember[]>([]);
+  const [teams, setTeams] = useState<CompanyTeam[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [filter, setFilter] = useState<{
     status?: Task["status"];
     priority?: Task["priority"];
     assignedTo?: string;
+    team?: string;
   }>({});
 
-  // Simulate loading tasks from API
+  // Task Form Modal state
+  const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+
+  // Fetch members and teams
+  const fetchFormData = async () => {
+    try {
+      // Fetch members
+      const membersResponse = await companyMemberService.getCompanyMembers({
+        limit: 100,
+        page: 1,
+        sortBy: "fullName",
+        sortOrder: "asc",
+      });
+      setMembers(membersResponse.members);
+
+      // Fetch teams
+      const teamsResponse = await teamService.getTeams({
+        limit: 100,
+        page: 1,
+        sortBy: "teamName",
+        sortOrder: "asc",
+      });
+      setTeams(teamsResponse.data.teams);
+    } catch (error) {
+      console.error("Error fetching form data:", error);
+      toast.error("Failed to load form data");
+    }
+  };
+
+  // Fetch tasks for the calendar
+  const fetchTasks = async () => {
+    setIsLoading(true);
+    try {
+      // Calculate month start and end dates
+      const monthStart = startOfMonth(currentDate);
+      const monthEnd = endOfMonth(currentDate);
+
+      const response = await taskService.getTasks({
+        dueDateFrom: monthStart.toISOString(),
+        dueDateTo: monthEnd.toISOString(),
+        status: filter.status,
+        priority: filter.priority,
+        assignedTo: filter.assignedTo,
+        team: filter.team,
+        limit: 100, // Get all tasks for the month
+        page: 1,
+      });
+
+      setTasks(response.data.tasks);
+
+      // Save to local storage as backup
+      taskService.saveTasksToLocalStorage(response.data.tasks);
+    } catch (error: any) {
+      console.error("Error fetching tasks:", error);
+
+      // Fallback to local storage if API fails
+      const localTasks = taskService.getTasksFromLocalStorage();
+      const monthStart = startOfMonth(currentDate);
+      const monthEnd = endOfMonth(currentDate);
+
+      const filteredLocalTasks = localTasks.filter((task: Task) => {
+        const taskDate = parseISO(task.dueDate);
+        return taskDate >= monthStart && taskDate <= monthEnd;
+      });
+
+      setTasks(filteredLocalTasks);
+
+      toast.error("Failed to fetch tasks from server", {
+        description: "Using cached data as fallback",
+      });
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  // Initial fetch
   useEffect(() => {
-    const loadTasks = async () => {
-      try {
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-
-        // In production, this would be an API call
-        // const response = await fetch('/api/tasks');
-        // const data = await response.json();
-        // setTasks(data);
-
-        // For demo, use mock data
-        setTasks(MOCK_TASKS);
-        setIsLoading(false);
-        setIsRefreshing(false);
-      } catch (error) {
-        console.error("Failed to load tasks:", error);
-        toast.error("Failed to load tasks");
-        setIsLoading(false);
-        setIsRefreshing(false);
-      }
-    };
-
-    loadTasks();
-  }, []);
+    fetchTasks();
+    fetchFormData();
+  }, [currentDate, filter]);
 
   // Handle refresh
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    // Simulate refresh delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setTasks(MOCK_TASKS);
-    setIsRefreshing(false);
+    await fetchTasks();
+    await fetchFormData();
     toast.success("Calendar refreshed");
   };
 
@@ -775,8 +620,9 @@ export default function Calendar() {
     return tasks.filter((task) => {
       if (filter.status && task.status !== filter.status) return false;
       if (filter.priority && task.priority !== filter.priority) return false;
-      if (filter.assignedTo && task.assignedTo !== filter.assignedTo)
+      if (filter.assignedTo && task.assignedTo?.id !== filter.assignedTo)
         return false;
+      if (filter.team && task.team?.id !== filter.team) return false;
       return true;
     });
   }, [tasks, filter]);
@@ -816,9 +662,7 @@ export default function Calendar() {
   };
 
   const handleAddTask = (date: Date) => {
-    setEditingTask({
-      dueDate: format(date, "yyyy-MM-dd"),
-    });
+    setEditingTask(null);
     setIsTaskFormOpen(true);
   };
 
@@ -828,47 +672,58 @@ export default function Calendar() {
     setIsTaskFormOpen(true);
   };
 
-  const handleDeleteTask = (id: string) => {
-    setTasks(tasks.filter((task) => task.id !== id));
-    toast.success("Task deleted successfully");
+  const handleDeleteTask = async (id: string) => {
+    try {
+      setIsSubmitting(true);
+      await taskService.deleteTask(id);
+
+      // Remove task from local state
+      setTasks(tasks.filter((task) => task.id !== id));
+      toast.success("Task deleted successfully!");
+    } catch (error: any) {
+      console.error("Error deleting task:", error);
+      toast.error("Failed to delete task", {
+        description: error.message || "Please try again",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleSubmitTask = (taskData: Partial<Task>) => {
-    if (editingTask?.id) {
-      // Update existing task
-      setTasks(
-        tasks.map((task) =>
-          task.id === editingTask.id
-            ? { ...task, ...taskData, id: task.id }
-            : task,
-        ),
-      );
-      toast.success("Task updated successfully");
-    } else {
-      // Create new task
-      const newTask: Task = {
-        id: `task-${Date.now()}`,
-        title: taskData.title || "Untitled Task",
-        description: taskData.description,
-        dueDate: taskData.dueDate || new Date().toISOString(),
-        assignedTo: taskData.assignedTo || "",
-        assignedBy: "me@example.com", // Current user
-        status: taskData.status || "pending",
-        priority: taskData.priority || "medium",
-        tags: taskData.tags,
-        project: taskData.project,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      setTasks([...tasks, newTask]);
-      toast.success("Task created successfully");
+  // Handle Save Task (for TaskFormModal)
+  const handleSaveTask = async (data: any, id?: string) => {
+    setIsSubmitting(true);
 
-      // Simulate Boltic automation trigger
-      setTimeout(() => {
-        toast.info("Boltic automation triggered: Task assignment email sent");
-      }, 1000);
+    try {
+      if (id) {
+        // Update existing task
+        const updatedTask = await taskService.updateTask(id, data);
+
+        // Update task in local state
+        setTasks(tasks.map((task) => (task.id === id ? updatedTask : task)));
+        toast.success("Task updated successfully!");
+      } else {
+        // Create new task
+        const newTask = await taskService.createTask(data);
+
+        // Add task to local state
+        setTasks([newTask, ...tasks]);
+        toast.success("Task created successfully!");
+      }
+
+      setIsTaskFormOpen(false);
+
+      // Refresh tasks list to get updated data
+      await fetchTasks();
+    } catch (error: any) {
+      console.error("Error saving task:", error);
+      toast.error("Failed to save task", {
+        description: error.message || "Please try again",
+      });
+      throw error;
+    } finally {
+      setIsSubmitting(false);
     }
-    setEditingTask(undefined);
   };
 
   // Task statistics
@@ -877,8 +732,9 @@ export default function Calendar() {
     const pending = tasks.filter((t) => t.status === "pending").length;
     const overdue = tasks.filter((t) => t.status === "overdue").length;
     const completed = tasks.filter((t) => t.status === "completed").length;
+    const inProgress = tasks.filter((t) => t.status === "in-progress").length;
 
-    return { total, pending, overdue, completed };
+    return { total, pending, overdue, completed, inProgress };
   }, [tasks]);
 
   // Animation variants
@@ -907,7 +763,7 @@ export default function Calendar() {
   };
 
   // Show skeleton while loading
-  if (isLoading) {
+  if (isLoading && tasks.length === 0) {
     return <CalendarSkeleton />;
   }
 
@@ -962,6 +818,7 @@ export default function Calendar() {
               <Button
                 onClick={() => setIsTaskFormOpen(true)}
                 className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+                disabled={isLoading}
               >
                 <Plus className="h-4 w-4" />
                 New Task
@@ -971,12 +828,12 @@ export default function Calendar() {
 
           {/* Stats and filters */}
           <Card className="mb-6">
-            <CardContent className="p-4">
+            <CardContent className="">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 {/* Stats */}
                 <div className="flex flex-wrap gap-4">
                   <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full bg-blue-500" />
+                    <div className="h-3 w-3 rounded-full bg-gray-500" />
                     <span className="text-sm font-medium">
                       Total: {taskStats.total}
                     </span>
@@ -985,6 +842,12 @@ export default function Calendar() {
                     <div className="h-3 w-3 rounded-full bg-yellow-500" />
                     <span className="text-sm font-medium">
                       Pending: {taskStats.pending}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-full bg-blue-500" />
+                    <span className="text-sm font-medium">
+                      In Progress: {taskStats.inProgress}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1014,6 +877,7 @@ export default function Calendar() {
                             : (value as Task["status"]),
                       }))
                     }
+                    disabled={isLoading}
                   >
                     <SelectTrigger className="w-[140px]">
                       <Filter className="h-4 w-4 mr-2" />
@@ -1025,6 +889,7 @@ export default function Calendar() {
                       <SelectItem value="in-progress">In Progress</SelectItem>
                       <SelectItem value="completed">Completed</SelectItem>
                       <SelectItem value="overdue">Overdue</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
                     </SelectContent>
                   </Select>
 
@@ -1039,6 +904,7 @@ export default function Calendar() {
                             : (value as Task["priority"]),
                       }))
                     }
+                    disabled={isLoading}
                   >
                     <SelectTrigger className="w-[140px]">
                       <AlertCircle className="h-4 w-4 mr-2" />
@@ -1060,6 +926,7 @@ export default function Calendar() {
                         assignedTo: value === "all" ? undefined : value,
                       }))
                     }
+                    disabled={isLoading}
                   >
                     <SelectTrigger className="w-[160px]">
                       <Users className="h-4 w-4 mr-2" />
@@ -1067,9 +934,9 @@ export default function Calendar() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Members</SelectItem>
-                      {MOCK_TEAM_MEMBERS.map((member) => (
-                        <SelectItem key={member.id} value={member.email}>
-                          {member.name}
+                      {members.map((member) => (
+                        <SelectItem key={member.id} value={member.id}>
+                          {member.fullName}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -1088,31 +955,6 @@ export default function Calendar() {
                 <CardTitle className="text-xl">
                   {format(currentDate, "MMMM yyyy")}
                 </CardTitle>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      toast.info("Exporting calendar data via Boltic...");
-                      // Simulate Boltic automation for export
-                      setTimeout(() => {
-                        toast.success("Calendar exported successfully");
-                      }, 2000);
-                    }}
-                  >
-                    Export
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      toast.info("Syncing with Boltic workflows...");
-                      // Simulate Boltic sync
-                    }}
-                  >
-                    Sync
-                  </Button>
-                </div>
               </div>
             </CardHeader>
             <CardContent className="p-0">
@@ -1172,7 +1014,7 @@ export default function Calendar() {
         </motion.div>
       </motion.div>
 
-      {/* Modals */}
+      {/* Task Detail Modal */}
       <TaskDetailModal
         task={selectedTask}
         isOpen={isTaskModalOpen}
@@ -1181,18 +1023,18 @@ export default function Calendar() {
         onEdit={handleEditTask}
       />
 
-      <TaskForm
-        isOpen={isTaskFormOpen}
-        onClose={() => {
-          setIsTaskFormOpen(false);
-          setEditingTask(undefined);
-        }}
-        onSubmit={handleSubmitTask}
-        initialData={editingTask}
-        defaultDate={
-          editingTask?.dueDate ? parseISO(editingTask.dueDate) : undefined
-        }
-      />
+      {/* Task Form Modal */}
+      {isTaskFormOpen && (
+        <TaskFormModal
+          open={isTaskFormOpen}
+          onOpenChange={setIsTaskFormOpen}
+          editingTask={editingTask}
+          onSave={handleSaveTask}
+          isSubmitting={isSubmitting}
+          members={members}
+          teams={teams}
+        />
+      )}
     </div>
   );
 }

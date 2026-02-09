@@ -7,6 +7,8 @@ import TaskManagement from "./task_management";
 import CompanyMembers from "./CompanyMembers";
 import CompanyTeams from "./CompanyTeams";
 import MainNotification from "./MainNotificationsPage"
+import MessageTemplates from "./MessageTemplates";
+import Home from "./home";
 export {
   Dashboard,
   Login,
@@ -16,5 +18,7 @@ export {
   TaskManagement,
   CompanyMembers,
   CompanyTeams,
-  MainNotification
+  MainNotification,
+  MessageTemplates,
+  Home
 };
