@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Bell,
   Clock,
@@ -23,7 +24,6 @@ import {
   Plus,
   MoreVertical,
   Filter,
-  // Download,
   RefreshCw,
   Mail,
   Sparkles,
@@ -32,13 +32,56 @@ import {
   FileText,
   TrendingUp,
   AlertTriangle,
+  TrendingDown,
+  Circle,
+  BarChart3,
+  Activity,
+  Rocket,
+  TargetIcon,
+  Inbox,
+  Eye,
+  CalendarDays,
+  Download,
+  Upload,
+  Settings,
+  HelpCircle,
+  UserCheck,
+  Shield,
+  Award,
+  PieChart,
+  BellRing,
+  Timer,
+  TimerOff,
+  FolderOpen,
+  CheckSquare,
+  XCircle,
+  PlayCircle,
+  PauseCircle,
+  RotateCw,
+  Lightbulb,
+  Brain,
+  Smartphone,
+  MailOpen,
+  MousePointerClick,
+  LineChart,
+  Target as TargetLucide,
+  ArrowRight,
+  User,
+  Mail as MailIcon,
+  FolderKanban,
+  Tag,
+  Paperclip,
+  Search,
+  X,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  // DropdownMenuLabel,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -51,59 +94,82 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import {
+  format,
+  parseISO,
+  differenceInDays,
+  isToday,
+  isTomorrow,
+  startOfDay,
+  endOfDay,
+} from "date-fns";
+import { cn } from "@/lib/utils";
 
 // Services
 import { taskService } from "@/services/taskService";
 import { companyMemberService } from "@/services/companyMemberService";
 import { teamService } from "@/services/teamService";
 import { notificationService } from "@/services/notificationService";
+import { reminderService } from "@/services/reminderService";
 
 // Types
 import type { Task } from "@/types/task.types";
-// import type { CompanyMember } from "@/types/companyMember.ts";
+import type { CompanyMember } from "@/types/companyMember.ts";
 import type { CompanyTeam } from "@/types/companyTeams.ts";
 import type { MainNotification } from "@/types/notification";
+import type { Reminder } from "@/types/reminder.types";
+
+// Components
+import { TaskStatusBadge, PriorityBadge } from "../components/TaskBadges";
+import TaskFormModal from "../components/forms/TaskFormModal";
+import SendReminderModal from "../components/forms/SendReminderModal";
+
+// Framer Variants
+import {
+  containerVariants,
+  itemVariants,
+  rowVariants,
+  headerVariants,
+  buttonVariants,
+} from "@/components/FramerVariants";
 
 // Loading skeleton
 const DashboardSkeleton = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4 md:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 p-4 md:p-6">
       <div className="max-w-9xl mx-auto space-y-6">
         {/* Header Skeleton */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="space-y-2">
-            <div className="h-10 w-64 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-            <div className="h-4 w-80 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+            <div className="h-10 w-64 bg-muted rounded animate-pulse"></div>
+            <div className="h-4 w-80 bg-muted rounded animate-pulse"></div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="h-9 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-            <div className="h-9 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-            <div className="h-9 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+            <div className="h-9 w-24 bg-muted rounded animate-pulse"></div>
+            <div className="h-9 w-24 bg-muted rounded animate-pulse"></div>
+            <div className="h-9 w-32 bg-muted rounded animate-pulse"></div>
           </div>
         </div>
 
         {/* Stats Grid Skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="flex flex-wrap gap-6">
           {[1, 2, 3, 4].map((i) => (
-            <Card
-              key={i}
-              className="border border-gray-200 dark:border-gray-700"
-            >
+            <Card key={i} className="border-border flex-1 min-w-[200px]">
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <div className="space-y-2">
-                    <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                    <div className="h-3 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                    <div className="h-4 w-24 bg-muted rounded animate-pulse"></div>
+                    <div className="h-3 w-32 bg-muted rounded animate-pulse"></div>
                   </div>
-                  <div className="h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                  <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <div className="h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                  <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                  <div className="h-8 w-16 bg-muted rounded animate-pulse"></div>
+                  <div className="h-4 w-20 bg-muted rounded animate-pulse"></div>
                 </div>
               </CardContent>
             </Card>
@@ -111,90 +177,17 @@ const DashboardSkeleton = () => {
         </div>
 
         {/* Main Content Skeleton */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            {/* Tasks Table Skeleton */}
-            <Card className="border border-gray-200 dark:border-gray-700">
-              <CardHeader>
-                <div className="space-y-2">
-                  <div className="h-6 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                  <div className="h-4 w-64 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {[1, 2, 3, 4].map((row) => (
-                    <div
-                      key={row}
-                      className="h-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
-                    ></div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Calendar Preview Skeleton */}
-            <Card className="border border-gray-200 dark:border-gray-700">
-              <CardHeader>
-                <div className="space-y-2">
-                  <div className="h-6 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                  <div className="h-4 w-64 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div
-                      key={i}
-                      className="h-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
-                    ></div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="lg:w-2/3 space-y-6">
+            <div className="h-96 bg-muted rounded animate-pulse"></div>
+            <div className="flex flex-col md:flex-row gap-6">
+              <div className="flex-1 h-64 bg-muted rounded animate-pulse"></div>
+              <div className="flex-1 h-64 bg-muted rounded animate-pulse"></div>
+            </div>
           </div>
-
-          {/* Right Column Skeleton */}
-          <div className="space-y-6">
-            {/* Quick Actions Skeleton */}
-            <Card className="border border-gray-200 dark:border-gray-700">
-              <CardHeader>
-                <div className="space-y-2">
-                  <div className="h-6 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                  <div className="h-4 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-3">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div
-                      key={i}
-                      className="h-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
-                    ></div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Message Templates Skeleton */}
-            <Card className="border border-gray-200 dark:border-gray-700">
-              <CardHeader>
-                <div className="space-y-2">
-                  <div className="h-6 w-40 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                  <div className="h-4 w-56 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div
-                      key={i}
-                      className="h-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
-                    ></div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+          <div className="lg:w-1/3 space-y-6">
+            <div className="h-48 bg-muted rounded animate-pulse"></div>
+            <div className="h-64 bg-muted rounded animate-pulse"></div>
           </div>
         </div>
       </div>
@@ -202,163 +195,454 @@ const DashboardSkeleton = () => {
   );
 };
 
-// Priority Badge Component
-const PriorityBadge = ({ priority }: { priority: string }) => {
-  const variants = {
-    high: "bg-red-100 text-red-800 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-300",
-    medium:
-      "bg-yellow-100 text-yellow-800 hover:bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-300",
-    low: "bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-300",
+// Stat Card Component
+const StatCard = ({
+  title,
+  value,
+  change,
+  icon: Icon,
+  color,
+  trend,
+  description,
+  loading = false,
+}: {
+  title: string;
+  value: string;
+  change: string;
+  icon: any;
+  color: string;
+  trend: "up" | "down" | "warning" | "neutral";
+  description: string;
+  loading?: boolean;
+}) => {
+  const trendColors = {
+    up: "text-green-600 dark:text-green-400",
+    down: "text-red-600 dark:text-red-400",
+    warning: "text-amber-600 dark:text-amber-400",
+    neutral: "text-gray-600 dark:text-gray-400",
+  };
+
+  const trendIcons = {
+    up: "↗",
+    down: "↘",
+    warning: "⚠",
+    neutral: "➡",
   };
 
   return (
-    <Badge
-      variant="outline"
-      className={`${variants[priority as keyof typeof variants]} font-medium`}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -5, transition: { duration: 0.2 } }}
+      className="flex-1 min-w-[200px]"
     >
-      {priority.charAt(0).toUpperCase() + priority.slice(1)}
-    </Badge>
+      <Card className="border-border bg-card hover:shadow-lg transition-all duration-300 overflow-hidden group h-full">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-transparent via-white/5 to-transparent transform translate-x-16 -translate-y-16 rotate-45 group-hover:translate-x-20 transition-transform duration-500" />
+        <CardHeader className="pb-2 relative z-10">
+          <div className="flex items-center justify-between">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-sm font-medium text-muted-foreground truncate">
+                {title}
+              </CardTitle>
+              <CardDescription className="text-xs mt-1 truncate">
+                {description}
+              </CardDescription>
+            </div>
+            <div
+              className={`${color} p-3 rounded-xl shadow-md group-hover:shadow-lg transition-shadow flex-shrink-0 ml-2`}
+            >
+              <Icon className="w-5 h-5 text-white" />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="relative z-10">
+          <div className="flex items-end justify-between">
+            <div className="flex-1 min-w-0">
+              <div className="text-3xl font-bold text-foreground mb-1 truncate">
+                {loading ? (
+                  <div className="h-8 w-20 bg-muted rounded animate-pulse"></div>
+                ) : (
+                  value
+                )}
+              </div>
+              <div
+                className={`text-sm font-medium ${trendColors[trend]} flex items-center gap-1 truncate`}
+              >
+                {loading ? (
+                  <div className="h-4 w-24 bg-muted rounded animate-pulse"></div>
+                ) : (
+                  <>
+                    {trendIcons[trend]} {change}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 };
 
-// Status Badge Component
-const TaskStatusBadge = ({ status }: { status: string }) => {
-  const variants = {
-    completed:
-      "bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-300",
-    "in-progress":
-      "bg-blue-100 text-blue-800 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300",
-    pending:
-      "bg-yellow-100 text-yellow-800 hover:bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-300",
-    overdue:
-      "bg-red-100 text-red-800 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-300",
-    cancelled:
-      "bg-gray-100 text-gray-800 hover:bg-gray-100 dark:bg-gray-900/30 dark:text-gray-300",
-  };
+// Task Progress Ring Component
+const TaskProgressRing = ({
+  value,
+  color,
+  label,
+  sublabel,
+}: {
+  value: number;
+  color: string;
+  label: string;
+  sublabel: string;
+}) => {
+  const radius = 40;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (value / 100) * circumference;
 
-  const labels = {
-    completed: "Completed",
-    "in-progress": "In Progress",
-    pending: "Pending",
-    overdue: "Overdue",
-    cancelled: "Cancelled",
+  return (
+    <div className="flex flex-col items-center">
+      <div className="relative">
+        <svg className="transform -rotate-90" width="100" height="100">
+          <circle
+            cx="50"
+            cy="50"
+            r={radius}
+            stroke="currentColor"
+            strokeWidth="8"
+            fill="transparent"
+            className="text-gray-200 dark:text-gray-800"
+          />
+          <circle
+            cx="50"
+            cy="50"
+            r={radius}
+            stroke="currentColor"
+            strokeWidth="8"
+            fill="transparent"
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            className={color}
+            style={{ transition: "stroke-dashoffset 1s ease-in-out" }}
+          />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-2xl font-bold text-foreground">{value}%</span>
+        </div>
+      </div>
+      <div className="mt-3 text-center">
+        <p className="font-medium text-sm">{label}</p>
+        <p className="text-xs text-muted-foreground">{sublabel}</p>
+      </div>
+    </div>
+  );
+};
+
+// Team Member Card Component
+const TeamMemberCard = ({ member }: { member: CompanyMember }) => {
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   return (
-    <Badge
-      className={`${variants[status as keyof typeof variants]} font-medium`}
+    <motion.div
+      whileHover={{ scale: 1.02 }}
+      className="group bg-card border border-border rounded-lg p-4 hover:shadow-md transition-all"
     >
-      {labels[status as keyof typeof labels]}
-    </Badge>
+      <div className="flex items-center gap-3">
+        <Avatar className="h-10 w-10 border-2 border-background group-hover:border-primary transition-colors">
+          <AvatarFallback className="bg-primary/10 text-primary">
+            {getInitials(member.fullName || member.email)}
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between">
+            <p className="font-medium text-sm truncate">
+              {member.fullName || member.email.split("@")[0]}
+            </p>
+            <Badge variant="default" className="text-xs bg-green-500">
+              Active
+            </Badge>
+          </div>
+          <p className="text-xs text-muted-foreground truncate">
+            {member.email}
+          </p>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-xs text-muted-foreground">
+              {member.role || "Team Member"}
+            </span>
+          </div>
+        </div>
+      </div>
+    </motion.div>
   );
 };
 
+// Quick Action Button Component
+const QuickActionButton = ({
+  label,
+  icon: Icon,
+  color,
+  onClick,
+  description,
+}: {
+  label: string;
+  icon: any;
+  color: string;
+  onClick: () => void;
+  description?: string;
+}) => {
+  return (
+    <motion.button
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      onClick={onClick}
+      className={`flex flex-col items-center justify-center p-4 rounded-xl border border-border hover:shadow-md transition-all ${color} group flex-1 min-w-[140px]`}
+    >
+      <div className="p-3 rounded-full bg-white/20 backdrop-blur-sm mb-3 group-hover:scale-110 transition-transform">
+        <Icon className="w-6 h-6 text-white" />
+      </div>
+      <span className="font-medium text-white text-sm text-center">
+        {label}
+      </span>
+      {description && (
+        <span className="text-white/80 text-xs mt-1 text-center">
+          {description}
+        </span>
+      )}
+    </motion.button>
+  );
+};
+
+// Recent Activity Item Component
+const RecentActivityItem = ({ activity }: { activity: any }) => {
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case "task_created":
+        return { icon: Plus, color: "text-blue-500", bg: "bg-blue-500/10" };
+      case "task_completed":
+        return {
+          icon: CheckCircle,
+          color: "text-green-500",
+          bg: "bg-green-500/10",
+        };
+      case "task_updated":
+        return {
+          icon: RefreshCw,
+          color: "text-amber-500",
+          bg: "bg-amber-500/10",
+        };
+      case "reminder_sent":
+        return { icon: Bell, color: "text-purple-500", bg: "bg-purple-500/10" };
+      case "overdue":
+        return {
+          icon: AlertCircle,
+          color: "text-red-500",
+          bg: "bg-red-500/10",
+        };
+      default:
+        return { icon: Activity, color: "text-gray-500", bg: "bg-gray-500/10" };
+    }
+  };
+
+  const { icon: Icon, color, bg } = getActivityIcon(activity.type);
+
+  return (
+    <div className="flex gap-3 group">
+      <div className="flex flex-col items-center">
+        <div
+          className={`p-2 rounded-full ${bg} group-hover:scale-110 transition-transform`}
+        >
+          <Icon className={`w-4 h-4 ${color}`} />
+        </div>
+      </div>
+      <div className="flex-1 pb-4">
+        <div className="flex justify-between items-start">
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-sm truncate">{activity.title}</p>
+            <p className="text-sm text-muted-foreground truncate">
+              {activity.description}
+            </p>
+          </div>
+          <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
+            {activity.time}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Main Dashboard Component
 export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedTab, setSelectedTab] = useState("overview");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Modal states
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [taskForReminder, setTaskForReminder] = useState<Task | null>(null);
+
+  // Dashboard data states
   const [stats, setStats] = useState({
     totalTasks: 0,
-    assignedByYou: 0,
-    dueToday: 0,
-    teamMembers: 0,
-    pendingTasks: 0,
     completedTasks: 0,
+    pendingTasks: 0,
     overdueTasks: 0,
+    inProgressTasks: 0,
+    teamMembers: 0,
+    activeTeams: 0,
+    remindersSent: 0,
+    dueToday: 0,
   });
 
-  const [myTasks, setMyTasks] = useState<Task[]>([]);
-  // const [teamMembers, setTeamMembers] = useState<CompanyMember[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [members, setMembers] = useState<CompanyMember[]>([]);
   const [teams, setTeams] = useState<CompanyTeam[]>([]);
   const [notifications, setNotifications] = useState<MainNotification[]>([]);
-  const [upcomingCalendar, setUpcomingCalendar] = useState<any[]>([]);
+  const [recentActivities, setRecentActivities] = useState<any[]>([]);
 
-  // Format date
+  // Format date utility
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
-
-  // Format time ago
-  const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return "Today";
-    if (diffDays === 1) return "Yesterday";
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-    return `${Math.floor(diffDays / 30)} months ago`;
-  };
-
-  // Get today's date in YYYY-MM-DD format
-  const getTodayDate = () => {
-    const today = new Date();
-    return today.toISOString().split("T")[0];
-  };
-
-  // Get tasks for calendar preview (next 7 days)
-  const getUpcomingTasks = async () => {
     try {
-      const today = new Date();
-      const nextWeek = new Date(today);
-      nextWeek.setDate(today.getDate() + 7);
-
-      const response = await taskService.getTasks({
-        dueDateFrom: today.toISOString(),
-        dueDateTo: nextWeek.toISOString(),
-        limit: 20,
-        sortBy: "dueDate",
-        sortOrder: "asc",
-      });
-
-      // Group tasks by due date
-      const groupedTasks: { [key: string]: Task[] } = {};
-      response.data.tasks.forEach((task) => {
-        const dueDate = new Date(task.dueDate).toDateString();
-        if (!groupedTasks[dueDate]) {
-          groupedTasks[dueDate] = [];
-        }
-        groupedTasks[dueDate].push(task);
-      });
-
-      // Convert to calendar format
-      const calendarData = Object.entries(groupedTasks).map(([date, tasks]) => {
-        const taskDate = new Date(date);
-        const now = new Date();
-        const diffDays = Math.floor(
-          (taskDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
-        );
-
-        let dateLabel = "";
-        if (diffDays === 0) dateLabel = "Today";
-        else if (diffDays === 1) dateLabel = "Tomorrow";
-        else
-          dateLabel = taskDate.toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-          });
-
-        let type: "busy" | "medium" | "light" = "light";
-        if (tasks.length >= 4) type = "busy";
-        else if (tasks.length >= 2) type = "medium";
-
-        return {
-          date: dateLabel,
-          tasks: tasks.length,
-          type,
-          items: tasks.slice(0, 3).map((task) => task.title),
-        };
-      });
-
-      setUpcomingCalendar(calendarData.slice(0, 4));
+      const date = parseISO(dateString);
+      if (isToday(date)) return "Today";
+      if (isTomorrow(date)) return "Tomorrow";
+      return format(date, "MMM d, yyyy");
     } catch (error) {
-      console.error("Error fetching upcoming tasks:", error);
+      return "Invalid date";
     }
+  };
+
+  // Format time ago utility
+  const formatTimeAgo = (dateString: string) => {
+    try {
+      const date = parseISO(dateString);
+      const now = new Date();
+      const diffMinutes = Math.floor(
+        (now.getTime() - date.getTime()) / (1000 * 60),
+      );
+
+      if (diffMinutes < 1) return "Just now";
+      if (diffMinutes < 60) return `${diffMinutes}m ago`;
+      if (diffMinutes < 1440) return `${Math.floor(diffMinutes / 60)}h ago`;
+      return `${Math.floor(diffMinutes / 1440)}d ago`;
+    } catch (error) {
+      return "Recently";
+    }
+  };
+
+  // Calculate task metrics from backend data
+  const calculateTaskMetrics = (tasks: Task[]) => {
+    const today = new Date();
+    const todayStart = startOfDay(today);
+    const todayEnd = endOfDay(today);
+
+    return {
+      total: tasks.length,
+      completed: tasks.filter((t) => t.status === "completed").length,
+      pending: tasks.filter((t) => t.status === "pending").length,
+      inProgress: tasks.filter((t) => t.status === "in-progress").length,
+      overdue: tasks.filter((t) => {
+        try {
+          const dueDate = parseISO(t.dueDate);
+          return (
+            t.status !== "completed" &&
+            t.status !== "cancelled" &&
+            dueDate < todayStart
+          );
+        } catch {
+          return false;
+        }
+      }).length,
+      dueToday: tasks.filter((t) => {
+        try {
+          const dueDate = parseISO(t.dueDate);
+          return (
+            dueDate >= todayStart &&
+            dueDate <= todayEnd &&
+            t.status !== "completed"
+          );
+        } catch {
+          return false;
+        }
+      }).length,
+      highPriority: tasks.filter(
+        (t) => t.priority === "high" && t.status !== "completed",
+      ).length,
+    };
+  };
+
+  // Generate recent activities from backend data
+  const generateRecentActivities = (
+    tasks: Task[],
+    notifications: MainNotification[],
+  ) => {
+    const activities: {
+      type: string;
+      title: string;
+      description: string;
+      time: string;
+      taskId?: string;
+      notificationId?: string;
+    }[] = [];
+
+    // Add task activities
+    tasks.slice(0, 5).forEach((task) => {
+      activities.push({
+        type: "task_created",
+        title: "Task Created",
+        description: task.title,
+        time: formatTimeAgo(task.createdAt),
+        taskId: task.id,
+      });
+
+      if (task.status === "completed") {
+        activities.push({
+          type: "task_completed",
+          title: "Task Completed",
+          description: task.title,
+          time: formatTimeAgo(task.updatedAt),
+          taskId: task.id,
+        });
+      } else if (task.status === "overdue") {
+        activities.push({
+          type: "overdue",
+          title: "Task Overdue",
+          description: task.title,
+          time: formatTimeAgo(task.dueDate),
+          taskId: task.id,
+        });
+      }
+    });
+
+    // Add notification activities
+    notifications.slice(0, 3).forEach((notification) => {
+      activities.push({
+        type: "reminder_sent",
+        title:
+          notification.notificationType === "alert"
+            ? "Alert Sent"
+            : "Notification Sent",
+        description: notification.title,
+        time: formatTimeAgo(notification.createdAt),
+        notificationId: notification.id,
+      });
+    });
+
+    // Sort by time (most recent first) and limit to 8
+    return activities
+      .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+      .slice(0, 8);
   };
 
   // Fetch dashboard data
@@ -373,112 +657,168 @@ export default function Dashboard() {
         notificationsResponse,
       ] = await Promise.all([
         taskService.getTasks({
-          limit: 100,
+          limit: 50,
           page: 1,
           sortBy: "dueDate",
           sortOrder: "asc",
         }),
         companyMemberService.getCompanyMembers({
-          limit: 100,
+          limit: 50,
           page: 1,
           sortBy: "fullName",
           sortOrder: "asc",
         }),
         teamService.getTeams({
-          limit: 100,
+          limit: 50,
           page: 1,
           sortBy: "teamName",
           sortOrder: "asc",
         }),
         notificationService.getMainNotifications({
-          limit: 5,
+          limit: 10,
           page: 1,
           sortBy: "createdAt",
           sortOrder: "desc",
         }),
       ]);
 
-      const tasks = tasksResponse.data.tasks;
-      const members = membersResponse.members;
-      const teamsData = teamsResponse.data.teams;
-      const notificationsData = notificationsResponse.status
-        ? notificationsResponse.data.notifications
-        : [];
+      const tasksData = tasksResponse.data?.tasks || [];
+      const membersData = membersResponse.members || [];
+      const teamsData = teamsResponse.data?.teams || [];
+      const notificationsData = notificationsResponse.data?.notifications || [];
 
-      // Calculate stats
-      const today = getTodayDate();
-      const todayTasks = tasks.filter((task: Task) => {
-        const dueDate = new Date(task.dueDate).toISOString().split("T")[0];
-        return dueDate === today;
-      });
-
-      const pendingTasks = tasks.filter(
-        (task: Task) => task.status === "pending",
-      );
-      const completedTasks = tasks.filter(
-        (task: Task) => task.status === "completed",
-      );
-      const overdueTasks = tasks.filter(
-        (task: Task) => task.status === "overdue",
-      );
-
-      // For demo purposes, let's assume 23 tasks are assigned by the current user
-      // In a real app, you would filter by current user ID
-      const assignedByYou = 23; // Mock data for now
+      // Calculate stats from backend data
+      const taskMetrics = calculateTaskMetrics(tasksData);
 
       setStats({
-        totalTasks: tasks.length,
-        assignedByYou,
-        dueToday: todayTasks.length,
-        teamMembers: members.length,
-        pendingTasks: pendingTasks.length,
-        completedTasks: completedTasks.length,
-        overdueTasks: overdueTasks.length,
+        totalTasks: taskMetrics.total,
+        completedTasks: taskMetrics.completed,
+        pendingTasks: taskMetrics.pending,
+        overdueTasks: taskMetrics.overdue,
+        inProgressTasks: taskMetrics.inProgress,
+        teamMembers: membersData.length,
+        activeTeams: teamsData.filter((t) => t.status === "active").length,
+        remindersSent: 0, // Will be calculated if we have reminder data
+        dueToday: taskMetrics.dueToday,
       });
 
-      // Get tasks for the table (mix of assigned to and by current user)
-      const myTasksData = tasks.slice(0, 4).map((task) => ({
-        ...task,
-        assignedByUser: members[Math.floor(Math.random() * members.length)], // Mock assigned by
-      }));
+      // Set data
+      setTasks(tasksData.slice(0, 8));
+      setMembers(membersData.slice(0, 6));
+      setTeams(teamsData.slice(0, 4));
+      setNotifications(notificationsData.slice(0, 5));
 
-      setMyTasks(myTasksData);
-      // setTeamMembers(members);
-      setTeams(teamsData);
-      setNotifications(notificationsData);
-
-      // Get upcoming tasks for calendar
-      await getUpcomingTasks();
+      // Generate recent activities from backend data
+      const activities = generateRecentActivities(tasksData, notificationsData);
+      setRecentActivities(activities);
     } catch (error: any) {
       console.error("Error fetching dashboard data:", error);
       toast.error("Failed to load dashboard data", {
         description: "Using cached data as fallback",
       });
 
-      // Fallback to local storage
-      const localTasks = taskService.getTasksFromLocalStorage();
-      const localMembers = companyMemberService.getMembersFromLocalStorage();
-      const localTeams = teamService.getTeamsFromLocalStorage();
+      // Fallback to local storage data
+      try {
+        const localTasks = taskService.getTasksFromLocalStorage();
+        const localMembers = companyMemberService.getMembersFromLocalStorage();
+        const localTeams = teamService.getTeamsFromLocalStorage();
+        const localNotifications =
+          notificationService.getMainNotificationsFromLocalStorage();
 
-      setStats({
-        totalTasks: localTasks.length,
-        assignedByYou: 23,
-        dueToday: 8,
-        teamMembers: localMembers.length,
-        pendingTasks: localTasks.filter((t: any) => t.status === "pending")
-          .length,
-        completedTasks: localTasks.filter((t: any) => t.status === "completed")
-          .length,
-        overdueTasks: localTasks.filter((t: any) => t.status === "overdue")
-          .length,
-      });
+        const taskMetrics = calculateTaskMetrics(localTasks);
 
-      setMyTasks(localTasks.slice(0, 4));
-      // setTeamMembers(localMembers.slice(0, 10));
-      setTeams(localTeams.slice(0, 5));
+        setStats({
+          totalTasks: taskMetrics.total,
+          completedTasks: taskMetrics.completed,
+          pendingTasks: taskMetrics.pending,
+          overdueTasks: taskMetrics.overdue,
+          inProgressTasks: taskMetrics.inProgress,
+          teamMembers: localMembers.length,
+          activeTeams: localTeams.filter((t) => t.status === "active").length,
+          remindersSent: 0,
+          dueToday: taskMetrics.dueToday,
+        });
+
+        setTasks(localTasks.slice(0, 8));
+        setMembers(localMembers.slice(0, 6));
+        setTeams(localTeams.slice(0, 4));
+        setNotifications(localNotifications.slice(0, 5));
+
+        const activities = generateRecentActivities(
+          localTasks,
+          localNotifications,
+        );
+        setRecentActivities(activities);
+      } catch (fallbackError) {
+        console.error("Fallback data error:", fallbackError);
+      }
     } finally {
       setIsLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  // Handle task save
+  const handleSaveTask = async (data: any, id?: string) => {
+    setIsSubmitting(true);
+    try {
+      if (id) {
+        // Update existing task
+        const updatedTask = await taskService.updateTask(id, data);
+        toast.success("Task updated successfully!");
+      } else {
+        // Create new task
+        const newTask = await taskService.createTask(data);
+        toast.success("Task created successfully!");
+      }
+      setIsTaskModalOpen(false);
+      fetchDashboardData(); // Refresh data
+    } catch (error: any) {
+      console.error("Error saving task:", error);
+      toast.error("Failed to save task", {
+        description: error.message || "Please try again",
+      });
+      throw error;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handle send reminder
+  const handleSendReminder = async (taskId: string, message: string) => {
+    setIsSubmitting(true);
+    try {
+      const response = await reminderService.sendManualReminder({
+        taskId,
+        daysThreshold: 0,
+        message,
+      });
+      toast.success("Reminder sent successfully!", {
+        description: `Reminder sent to ${response.data.remindersSent} user(s)`,
+      });
+      setIsReminderModalOpen(false);
+      setTaskForReminder(null);
+    } catch (error: any) {
+      console.error("Error sending reminder:", error);
+      toast.error("Failed to send reminder", {
+        description: error.message || "Please try again",
+      });
+      throw error;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handle edit task
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setIsTaskModalOpen(true);
+  };
+
+  // Handle send reminder from dashboard
+  const handleSendReminderFromDashboard = (task: Task) => {
+    setTaskForReminder(task);
+    setIsReminderModalOpen(true);
   };
 
   // Initial fetch
@@ -486,736 +826,857 @@ export default function Dashboard() {
     fetchDashboardData();
   }, []);
 
-  // Refresh data
+  // Handle refresh
   const handleRefresh = () => {
+    setRefreshing(true);
     fetchDashboardData();
-    toast.info("Refreshing dashboard data...");
+    toast.info("Refreshing dashboard data...", {
+      description: "Fetching latest updates",
+    });
   };
 
-  // Stats data
-  const statsData = [
-    {
-      title: "Total Tasks",
-      value: stats.totalTasks.toString(),
-      change: `${Math.floor((stats.totalTasks / 100) * 12)}%`,
-      icon: Clock,
-      color: "bg-blue-500",
-      trend: "up",
-      description: "All tasks in the system",
-    },
-    {
-      title: "Assigned by You",
-      value: stats.assignedByYou.toString(),
-      change: "+5",
-      icon: Users,
-      color: "bg-purple-500",
-      trend: "up",
-      description: "Tasks you assigned",
-    },
-    {
-      title: "Due Today",
-      value: stats.dueToday.toString(),
-      change: stats.dueToday > 3 ? "Urgent" : "On Track",
-      icon: AlertTriangle,
-      color: stats.dueToday > 3 ? "bg-amber-500" : "bg-green-500",
-      trend: stats.dueToday > 3 ? "warning" : "up",
-      description: "Tasks due today",
-    },
-    {
-      title: "Team Members",
-      value: stats.teamMembers.toString(),
-      change: "+2",
-      icon: UserPlus,
-      color: "bg-green-500",
-      trend: "up",
-      description: "Active team members",
-    },
-  ];
-
-  // AI Templates (static for now)
-  const aiTemplates = [
-    {
-      name: "Follow-up Reminder",
-      usage: 24,
-      lastUsed: "Today",
-      aiGenerated: true,
-    },
-    {
-      name: "Urgent Deadline",
-      usage: 12,
-      lastUsed: "Yesterday",
-      aiGenerated: true,
-    },
-    {
-      name: "Weekly Check-in",
-      usage: 8,
-      lastUsed: "3 days ago",
-      aiGenerated: true,
-    },
-    {
-      name: "Task Completion",
-      usage: 15,
-      lastUsed: "Today",
-      aiGenerated: false,
-    },
-  ];
-
-  // Boltic Status (static for now)
-  const bolticStatus = {
-    emailWorkflow: { status: "active", sentToday: 18, successRate: "98%" },
-    reminderWorkflow: { status: "active", triggered: 23, successRate: "95%" },
-    escalationWorkflow: { status: "paused", triggered: 0, successRate: "100%" },
-  };
-
-  // Quick Actions
+  // Quick actions
   const quickActions = [
     {
       label: "Create Task",
       icon: Plus,
-      href: "/tasks/create",
-      color: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300",
+      color: "bg-gradient-to-br from-blue-500 to-blue-600",
+      onClick: () => {
+        setEditingTask(null);
+        setIsTaskModalOpen(true);
+      },
+      description: "Add new task",
     },
     {
-      label: "Add Team Member",
-      icon: UserPlus,
-      href: "/team/add",
-      color:
-        "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-300",
+      label: "Send Reminder",
+      icon: Bell,
+      color: "bg-gradient-to-br from-purple-500 to-purple-600",
+      onClick: () => {
+        if (tasks.length > 0) {
+          setTaskForReminder(tasks[0]);
+          setIsReminderModalOpen(true);
+        } else {
+          toast.info("No tasks available", {
+            description: "Create a task first to send reminders",
+          });
+        }
+      },
+      description: "Send reminder",
     },
     {
       label: "View Calendar",
       icon: Calendar,
-      href: "/calendar",
-      color:
-        "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300",
+      color: "bg-gradient-to-br from-green-500 to-green-600",
+      onClick: () => (window.location.href = "/calendar"),
+      description: "Schedule view",
     },
     {
-      label: "AI Template",
-      icon: Sparkles,
-      href: "/templates/ai",
-      color:
-        "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-300",
+      label: "Manage Team",
+      icon: Users,
+      color: "bg-gradient-to-br from-amber-500 to-amber-600",
+      onClick: () => (window.location.href = "/company-teams"),
+      description: "Team settings",
     },
   ];
 
-  if (isLoading) {
+  // Stats data from backend
+  const statsData = useMemo(
+    () => [
+      {
+        title: "Total Tasks",
+        value: stats.totalTasks.toString(),
+        change: `${stats.totalTasks > 0 ? Math.round((stats.completedTasks / stats.totalTasks) * 100) : 0}% done`,
+        icon: TargetIcon,
+        color: "bg-gradient-to-br from-blue-500 to-blue-600",
+        trend: (stats.totalTasks > 0 ? "up" : "neutral") as any,
+        description: "All active tasks",
+      },
+      {
+        title: "Completed",
+        value: stats.completedTasks.toString(),
+        change:
+          stats.totalTasks > 0
+            ? `${Math.round((stats.completedTasks / stats.totalTasks) * 100)}% rate`
+            : "No tasks",
+        icon: CheckCircle,
+        color: "bg-gradient-to-br from-green-500 to-green-600",
+        trend: (stats.completedTasks > 0 ? "up" : "neutral") as any,
+        description: "Tasks completed",
+      },
+      {
+        title: "Overdue",
+        value: stats.overdueTasks.toString(),
+        change: stats.overdueTasks > 0 ? "Needs attention" : "All good",
+        icon: AlertTriangle,
+        color: "bg-gradient-to-br from-red-500 to-red-600",
+        trend: (stats.overdueTasks > 0 ? "warning" : "up") as any,
+        description: "Requires attention",
+      },
+      {
+        title: "Due Today",
+        value: stats.dueToday.toString(),
+        change: stats.dueToday > 3 ? "Busy day" : "Manageable",
+        icon: CalendarDays,
+        color: "bg-gradient-to-br from-amber-500 to-amber-600",
+        trend: (stats.dueToday > 3 ? "warning" : "neutral") as any,
+        description: "Tasks due today",
+      },
+    ],
+    [stats],
+  );
+
+  // Calculate completion percentage
+  const completionPercentage = useMemo(() => {
+    return stats.totalTasks > 0
+      ? Math.round((stats.completedTasks / stats.totalTasks) * 100)
+      : 0;
+  }, [stats]);
+
+  // Calculate pending percentage
+  const pendingPercentage = useMemo(() => {
+    return stats.totalTasks > 0
+      ? Math.round((stats.pendingTasks / stats.totalTasks) * 100)
+      : 0;
+  }, [stats]);
+
+  // Calculate overdue percentage
+  const overduePercentage = useMemo(() => {
+    return stats.totalTasks > 0
+      ? Math.round((stats.overdueTasks / stats.totalTasks) * 100)
+      : 0;
+  }, [stats]);
+
+  // Calculate in progress percentage
+  const inProgressPercentage = useMemo(() => {
+    return stats.totalTasks > 0
+      ? Math.round((stats.inProgressTasks / stats.totalTasks) * 100)
+      : 0;
+  }, [stats]);
+
+  if (isLoading && !refreshing) {
     return <DashboardSkeleton />;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4 md:p-6">
-      <div className="max-w-9xl mx-auto space-y-6">
-        {/* Header */}
-        <motion.div
-          className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              TaskChaser Dashboard
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
-              Manage tasks, teams, and automated follow-ups in one place
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" className="gap-2">
-              <Filter className="w-4 h-4" />
-              Filter
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2"
-              onClick={handleRefresh}
-            >
-              <RefreshCw className="w-4 h-4" />
-              Refresh
-            </Button>
-            <Link to="/tasks/create">
-              <Button className="gap-2 bg-blue-600 hover:bg-blue-700">
+    <>
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 p-4 md:p-6">
+        <div className="max-w-9xl mx-auto space-y-6">
+          {/* Header */}
+          <motion.div
+            className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-gradient-to-br from-primary to-primary/60 shadow-lg">
+                  <Rocket className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent truncate">
+                    TaskChaser Dashboard
+                  </h1>
+                  <p className="text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
+                    <span className="truncate">
+                      Intelligent task management with automated follow-ups
+                    </span>
+                    <Badge variant="outline" className="text-xs">
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      Live Data
+                    </Badge>
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={handleRefresh}
+                disabled={refreshing}
+              >
+                <RefreshCw
+                  className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
+                />
+                {refreshing ? "Refreshing..." : "Refresh"}
+              </Button>
+              <Button
+                className="gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg"
+                onClick={() => {
+                  setEditingTask(null);
+                  setIsTaskModalOpen(true);
+                }}
+              >
                 <Plus className="w-4 h-4" />
                 New Task
               </Button>
-            </Link>
-          </div>
-        </motion.div>
+            </div>
+          </motion.div>
 
-        {/* Stats Grid */}
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
-          {statsData.map((stat, index) => (
-            <Card
-              key={index}
-              className="border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                      {stat.title}
-                    </CardTitle>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                      {stat.description}
-                    </p>
-                  </div>
-                  <div className={`${stat.color} p-2 rounded-lg`}>
-                    <stat.icon className="w-4 h-4 text-white" />
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-end justify-between">
-                  <div>
-                    <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {stat.value}
+          {/* Stats Grid */}
+          <motion.div
+            className="flex flex-wrap gap-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            {statsData.map((stat, index) => (
+              <StatCard key={index} {...stat} loading={isLoading} />
+            ))}
+          </motion.div>
+
+          {/* Main Content Grid */}
+          <motion.div
+            className="flex flex-col lg:flex-row gap-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            {/* Left Column - Tasks & Analytics */}
+            <div className="lg:w-2/3 space-y-6">
+              {/* Tasks Overview */}
+              <Card className="border-border shadow-sm">
+                <CardHeader>
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <TargetIcon className="w-5 h-5 text-primary" />
+                      <div>
+                        <CardTitle>Task Overview</CardTitle>
+                        <CardDescription>
+                          Real-time task analytics and distribution
+                        </CardDescription>
+                      </div>
                     </div>
-                    <div
-                      className={`text-sm font-medium ${
-                        stat.trend === "up"
-                          ? "text-green-600 dark:text-green-400"
-                          : stat.trend === "warning"
-                            ? "text-amber-600 dark:text-amber-400"
-                            : "text-red-600 dark:text-red-400"
-                      }`}
-                    >
-                      {stat.change}{" "}
-                      {stat.trend === "up"
-                        ? "↗"
-                        : stat.trend === "warning"
-                          ? "⚠"
-                          : "↘"}
+                    <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+                      <TabsList className="flex w-full md:w-auto">
+                        <TabsTrigger value="overview" className="flex-1">
+                          Overview
+                        </TabsTrigger>
+                        <TabsTrigger value="pending" className="flex-1">
+                          Pending
+                        </TabsTrigger>
+                        <TabsTrigger value="completed" className="flex-1">
+                          Completed
+                        </TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Tabs>
+                    <TabsContent value="overview" className="mt-0">
+                      <div className="flex flex-wrap gap-6 mb-6">
+                        <div className="flex-1 min-w-[150px]">
+                          <TaskProgressRing
+                            value={completionPercentage}
+                            color="text-green-500"
+                            label="Completed"
+                            sublabel={`${stats.completedTasks} tasks`}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-[150px]">
+                          <TaskProgressRing
+                            value={pendingPercentage}
+                            color="text-amber-500"
+                            label="Pending"
+                            sublabel={`${stats.pendingTasks} tasks`}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-[150px]">
+                          <TaskProgressRing
+                            value={overduePercentage}
+                            color="text-red-500"
+                            label="Overdue"
+                            sublabel={`${stats.overdueTasks} tasks`}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-[150px]">
+                          <TaskProgressRing
+                            value={inProgressPercentage}
+                            color="text-blue-500"
+                            label="In Progress"
+                            sublabel={`${stats.inProgressTasks} tasks`}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold">Recent Tasks</h3>
+                          <Link to="/tasks">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-xs"
+                            >
+                              View All <ArrowRight className="w-3 h-3 ml-1" />
+                            </Button>
+                          </Link>
+                        </div>
+
+                        <div className="rounded-md border overflow-hidden">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="w-[200px]">
+                                  Task
+                                </TableHead>
+                                <TableHead>Assignee</TableHead>
+                                <TableHead>Due Date</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">
+                                  Priority
+                                </TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {tasks.length > 0 ? (
+                                tasks.slice(0, 5).map((task) => (
+                                  <TableRow
+                                    key={task.id}
+                                    className="hover:bg-muted/50"
+                                  >
+                                    <TableCell className="font-medium">
+                                      <div className="flex items-center gap-2">
+                                        {task.status === "completed" ? (
+                                          <CheckCircle className="w-4 h-4 text-green-500" />
+                                        ) : task.status === "overdue" ? (
+                                          <AlertCircle className="w-4 h-4 text-red-500" />
+                                        ) : (
+                                          <Circle className="w-4 h-4 text-amber-500" />
+                                        )}
+                                        <span className="truncate max-w-[150px]">
+                                          {task.title}
+                                        </span>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex items-center gap-2">
+                                        <Avatar className="w-6 h-6">
+                                          <AvatarFallback className="text-xs">
+                                            {task.assignedTo?.fullName
+                                              ?.split(" ")
+                                              .map((n) => n[0])
+                                              .join("") || "?"}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                        <span className="text-sm truncate max-w-[100px]">
+                                          {task.assignedTo?.fullName?.split(
+                                            " ",
+                                          )[0] || "Unassigned"}
+                                        </span>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex items-center gap-2">
+                                        <CalendarDays className="w-4 h-4 text-muted-foreground" />
+                                        <span className="text-sm">
+                                          {formatDate(task.dueDate)}
+                                        </span>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <TaskStatusBadge status={task.status} />
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      <PriorityBadge priority={task.priority} />
+                                    </TableCell>
+                                  </TableRow>
+                                ))
+                              ) : (
+                                <TableRow>
+                                  <TableCell
+                                    colSpan={5}
+                                    className="text-center py-8 text-muted-foreground"
+                                  >
+                                    No tasks found. Create your first task!
+                                  </TableCell>
+                                </TableRow>
+                              )}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                </CardContent>
+              </Card>
+
+              {/* Quick Actions & Team Overview */}
+              <div className="flex flex-col md:flex-row gap-6">
+                {/* Quick Actions */}
+                <Card className="border-border shadow-sm flex-1">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Zap className="w-5 h-5 text-amber-500" />
+                        <CardTitle>Quick Actions</CardTitle>
+                      </div>
+                      <Badge variant="outline" className="text-xs">
+                        Shortcuts
+                      </Badge>
                     </div>
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {stat.title === "Total Tasks" && (
-                      <span className="flex items-center gap-1">
-                        <TrendingUp className="w-3 h-3" />
-                        {stats.completedTasks} completed
-                      </span>
-                    )}
-                    {stat.title === "Assigned by You" && (
-                      <span className="flex items-center gap-1">
-                        <FileText className="w-3 h-3" />
-                        {stats.pendingTasks} pending
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </motion.div>
+                    <CardDescription>
+                      Common workflows and actions
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-3">
+                      {quickActions.map((action, index) => (
+                        <QuickActionButton key={index} {...action} />
+                      ))}
+                    </div>
+                    <div className="mt-6 p-4 rounded-lg bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-200/20 dark:border-blue-800/20">
+                      <div className="flex items-center gap-3">
+                        <Lightbulb className="w-5 h-5 text-amber-500" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm">Tip of the Day</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            Use the calendar view to better visualize your
+                            team's workload and deadlines.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
 
-        {/* Task Stats Progress */}
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-3 gap-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <Card className="border border-gray-200 dark:border-gray-700">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">
-                Task Progress
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Completed</span>
-                  <span className="font-medium">{stats.completedTasks}</span>
-                </div>
-                <Progress
-                  value={(stats.completedTasks / stats.totalTasks) * 100}
-                  className="h-2"
-                />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Pending</span>
-                  <span className="font-medium">{stats.pendingTasks}</span>
-                </div>
-                <Progress
-                  value={(stats.pendingTasks / stats.totalTasks) * 100}
-                  className="h-2 bg-yellow-100"
-                />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Overdue</span>
-                  <span className="font-medium">{stats.overdueTasks}</span>
-                </div>
-                <Progress
-                  value={(stats.overdueTasks / stats.totalTasks) * 100}
-                  className="h-2 bg-red-100"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border border-gray-200 dark:border-gray-700">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">
-                Team Overview
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm">Active Teams</span>
-                  </div>
-                  <span className="font-bold">{teams.length}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <UserPlus className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm">Team Members</span>
-                  </div>
-                  <span className="font-bold">{stats.teamMembers}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Target className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm">Avg. Tasks per Team</span>
-                  </div>
-                  <span className="font-bold">
-                    {teams.length > 0
-                      ? Math.round(stats.totalTasks / teams.length)
-                      : 0}
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border border-gray-200 dark:border-gray-700">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">
-                Recent Notifications
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {notifications.slice(0, 3).map((notification) => (
-                  <div key={notification.id} className="flex items-start gap-2">
-                    <div
-                      className={`mt-1 ${
-                        notification.notificationType === "alert"
-                          ? "text-red-500"
-                          : notification.notificationType === "good"
-                            ? "text-green-500"
-                            : "text-blue-500"
-                      }`}
-                    >
-                      {notification.notificationType === "alert" ? (
-                        <AlertCircle className="w-4 h-4" />
-                      ) : notification.notificationType === "good" ? (
-                        <CheckCircle className="w-4 h-4" />
+                {/* Notifications */}
+                <Card className="border-border shadow-sm">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Bell className="w-5 h-5 text-amber-500" />
+                        <CardTitle>Notifications</CardTitle>
+                      </div>
+                      <Badge variant="outline" className="text-xs">
+                        {notifications.length} New
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {notifications.length > 0 ? (
+                        notifications.map((notification, index) => (
+                          <div
+                            key={notification.id || index}
+                            className="p-3 rounded-lg hover:bg-muted/50"
+                          >
+                            <div className="flex items-start gap-3">
+                              <div
+                                className={`p-2 rounded-full ${
+                                  notification.notificationType === "alert"
+                                    ? "bg-red-500/10 text-red-500"
+                                    : notification.notificationType === "good"
+                                      ? "bg-green-500/10 text-green-500"
+                                      : "bg-blue-500/10 text-blue-500"
+                                }`}
+                              >
+                                {notification.notificationType === "alert" ? (
+                                  <AlertCircle className="w-4 h-4" />
+                                ) : notification.notificationType === "good" ? (
+                                  <CheckCircle className="w-4 h-4" />
+                                ) : (
+                                  <Bell className="w-4 h-4" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm line-clamp-1">
+                                  {notification.title}
+                                </p>
+                                <p className="text-xs text-muted-foreground line-clamp-2">
+                                  {notification.description || "No description"}
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {formatTimeAgo(notification.createdAt)}
+                                </p>
+                              </div>
+                              <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+                            </div>
+                          </div>
+                        ))
                       ) : (
-                        <Bell className="w-4 h-4" />
+                        <div className="text-center py-8 text-muted-foreground">
+                          <Bell className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                          <p>No notifications</p>
+                        </div>
                       )}
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium line-clamp-1">
-                        {notification.title}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {formatTimeAgo(notification.createdAt)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Link to="/notifications" className="w-full">
-                <Button variant="outline" size="sm" className="w-full">
-                  View All Notifications
-                </Button>
-              </Link>
-            </CardFooter>
-          </Card>
-        </motion.div>
-
-        {/* Main Content Grid */}
-        <motion.div
-          className="grid grid-cols-1 lg:grid-cols-3 gap-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-        >
-          {/* Left Column - Tasks & Calendar Preview */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* My Tasks & Assigned Tasks */}
-            <Card className="border border-gray-200 dark:border-gray-700 shadow-sm">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>My Tasks & Assigned Tasks</CardTitle>
-                    <CardDescription>
-                      Tasks assigned to you and by you
-                    </CardDescription>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" onClick={handleRefresh}>
-                      <RefreshCw className="w-4 h-4" />
-                    </Button>
-                    <Link to="/tasks">
-                      <Button variant="outline" size="sm">
-                        View All
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Task</TableHead>
-                      <TableHead>Assignee</TableHead>
-                      <TableHead>Due Date</TableHead>
-                      <TableHead>Priority</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {myTasks.map((task) => (
-                      <TableRow
-                        key={task.id}
-                        className="hover:bg-gray-50 dark:hover:bg-gray-800"
-                      >
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-2">
-                            {task.status === "completed" && (
-                              <CheckCircle className="w-4 h-4 text-green-500" />
-                            )}
-                            {task.status === "in-progress" && (
-                              <Clock className="w-4 h-4 text-blue-500" />
-                            )}
-                            {task.status === "pending" && (
-                              <AlertCircle className="w-4 h-4 text-amber-500" />
-                            )}
-                            <span className="truncate max-w-[200px]">
-                              {task.title}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Avatar className="w-6 h-6">
-                              <AvatarFallback className="text-xs">
-                                {task.assignedTo?.fullName
-                                  ?.split(" ")
-                                  .map((n: string) => n[0])
-                                  .join("") || "?"}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="text-sm">
-                              {task.assignedTo?.fullName || "Unassigned"}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {formatDate(task.dueDate)}
-                        </TableCell>
-                        <TableCell>
-                          <PriorityBadge priority={task.priority} />
-                        </TableCell>
-                        <TableCell>
-                          <TaskStatusBadge status={task.status} />
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreVertical className="w-4 h-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <Link to={`/tasks/edit/${task.id}`}>
-                                <DropdownMenuItem>
-                                  View Details
-                                </DropdownMenuItem>
-                              </Link>
-                              <DropdownMenuItem>Send Reminder</DropdownMenuItem>
-                              <DropdownMenuItem>Mark Complete</DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem className="text-red-600">
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-              <CardFooter className="flex justify-between">
-                <div className="text-sm text-gray-500">
-                  Showing {myTasks.length} of {stats.totalTasks} tasks
-                </div>
-                <Link to="/tasks/create">
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Plus className="w-4 h-4" />
-                    Create New Task
-                  </Button>
-                </Link>
-              </CardFooter>
-            </Card>
-
-            {/* Calendar Preview */}
-            <Card className="border border-gray-200 dark:border-gray-700 shadow-sm">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-gray-500" />
-                    <div>
-                      <CardTitle>Calendar Preview</CardTitle>
-                      <CardDescription>
-                        Upcoming tasks in calendar view
-                      </CardDescription>
-                    </div>
-                  </div>
-                  <Link to="/calendar">
-                    <Button variant="outline" size="sm">
-                      Open Calendar
-                    </Button>
-                  </Link>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {upcomingCalendar.map((day, index) => (
-                    <div
-                      key={index}
-                      className={`p-4 rounded-lg border ${
-                        day.type === "busy"
-                          ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
-                          : day.type === "medium"
-                            ? "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800"
-                            : "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
-                      }`}
-                    >
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <div className="font-semibold text-gray-900 dark:text-white">
-                            {day.date}
-                          </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            {day.tasks} task{day.tasks !== 1 ? "s" : ""}
-                          </div>
-                        </div>
-                        <Badge variant="outline">{day.type}</Badge>
-                      </div>
-                      <div className="space-y-2">
-                        {day.items.map((item: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined, itemIndex: React.Key | null | undefined) => (
-                          <div
-                            key={itemIndex}
-                            className="text-sm p-2 bg-white/50 dark:bg-gray-800/50 rounded line-clamp-1"
-                          >
-                            {item}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Column - Quick Actions & Status */}
-          <div className="space-y-6">
-            {/* Quick Actions */}
-            <Card className="border border-gray-200 dark:border-gray-700 shadow-sm">
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-                <CardDescription>Common tasks and shortcuts</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-3">
-                  {quickActions.map((action, index) => (
-                    <Link key={index} to={action.href}>
-                      <motion.div
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <Button
-                          variant="outline"
-                          className="flex-col h-auto py-4 gap-2 w-full"
-                        >
-                          <div className={`p-2 rounded-full ${action.color}`}>
-                            <action.icon className="w-5 h-5" />
-                          </div>
-                          <span className="font-medium">{action.label}</span>
+                  </CardContent>
+                  {notifications.length > 0 && (
+                    <CardFooter>
+                      <Link to="/notifications" className="w-full">
+                        <Button variant="outline" className="w-full">
+                          View All Notifications
                         </Button>
-                      </motion.div>
-                    </Link>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                      </Link>
+                    </CardFooter>
+                  )}
+                </Card>
+              </div>
+            </div>
 
-            {/* Message Templates */}
-            <Card className="border border-gray-200 dark:border-gray-700 shadow-sm">
+            {/* Right Column - Activity & Notifications */}
+            <div className="lg:w-1/3 space-y-6">
+              {/* Recent Activity */}
+              <Card className="border-border shadow-sm">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Activity className="w-5 h-5 text-purple-500" />
+                      <CardTitle>Recent Activity</CardTitle>
+                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      Live
+                    </Badge>
+                  </div>
+                  <CardDescription>
+                    System activities and updates
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {recentActivities.length > 0 ? (
+                      recentActivities.map((activity, index) => (
+                        <RecentActivityItem key={index} activity={activity} />
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Activity className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                        <p>No recent activity</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+                {recentActivities.length > 0 && (
+                  <CardFooter>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      size="sm"
+                      onClick={handleRefresh}
+                    >
+                      <RotateCw className="w-4 h-4 mr-2" />
+                      Load More Activity
+                    </Button>
+                  </CardFooter>
+                )}
+              </Card>
+            </div>
+          </motion.div>
+
+          {/* Bottom Section - Upcoming Deadlines & Performance */}
+          <motion.div
+            className="flex flex-col lg:flex-row gap-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
+            {/* Upcoming Deadlines */}
+            <Card className="border-border shadow-sm lg:w-2/3">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <MessageSquare className="w-5 h-5 text-gray-500" />
-                    <div>
-                      <CardTitle>Message Templates</CardTitle>
-                      <CardDescription>AI-generated templates</CardDescription>
-                    </div>
+                    <Calendar className="w-5 h-5 text-red-500" />
+                    <CardTitle>Upcoming Deadlines</CardTitle>
                   </div>
-                  <Link to="/templates">
-                    <Button variant="ghost" size="sm">
-                      View All
-                    </Button>
-                  </Link>
+                  <Badge variant="outline" className="text-xs">
+                    Next 7 Days
+                  </Badge>
                 </div>
+                <CardDescription>
+                  Tasks approaching their due dates
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {aiTemplates.map((template, index) => (
-                    <motion.div
-                      key={index}
-                      whileHover={{ x: 5 }}
-                      className="flex items-center justify-between p-3 rounded-lg border hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`p-2 rounded ${
-                            template.aiGenerated
-                              ? "bg-purple-100 dark:bg-purple-900/30"
-                              : "bg-gray-100 dark:bg-gray-800"
-                          }`}
-                        >
-                          {template.aiGenerated ? (
-                            <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                          ) : (
-                            <MessageSquare className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                          )}
-                        </div>
-                        <div>
-                          <div className="font-medium">{template.name}</div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            Used {template.usage} times
+                  {tasks
+                    .filter((task) => {
+                      try {
+                        const dueDate = parseISO(task.dueDate);
+                        const daysUntilDue = differenceInDays(
+                          dueDate,
+                          new Date(),
+                        );
+                        return (
+                          daysUntilDue >= 0 &&
+                          daysUntilDue <= 7 &&
+                          task.status !== "completed"
+                        );
+                      } catch {
+                        return false;
+                      }
+                    })
+                    .slice(0, 6)
+                    .map((task, index) => (
+                      <motion.div
+                        key={task.id}
+                        whileHover={{ x: 5 }}
+                        className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50"
+                      >
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div
+                            className={`p-2 rounded ${
+                              task.priority === "high"
+                                ? "bg-red-500/10 text-red-500"
+                                : task.priority === "medium"
+                                  ? "bg-amber-500/10 text-amber-500"
+                                  : "bg-green-500/10 text-green-500"
+                            }`}
+                          >
+                            {task.priority === "high" ? (
+                              <AlertCircle className="w-4 h-4" />
+                            ) : (
+                              <Clock className="w-4 h-4" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm line-clamp-1">
+                              {task.title}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Due {formatDate(task.dueDate)}
+                            </p>
+                            {task.project && (
+                              <Badge variant="outline" className="text-xs mt-1">
+                                <FolderKanban className="w-3 h-3 mr-1" />
+                                {task.project}
+                              </Badge>
+                            )}
                           </div>
                         </div>
-                      </div>
-                      <Badge variant="outline">
-                        {template.aiGenerated ? "AI" : "Custom"}
-                      </Badge>
-                    </motion.div>
-                  ))}
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <TaskStatusBadge status={task.status} />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={() =>
+                              handleSendReminderFromDashboard(task)
+                            }
+                            disabled={
+                              task.status === "completed" ||
+                              task.status === "cancelled"
+                            }
+                          >
+                            <Bell className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </motion.div>
+                    ))}
+                  {tasks.filter((task) => {
+                    try {
+                      const dueDate = parseISO(task.dueDate);
+                      const daysUntilDue = differenceInDays(
+                        dueDate,
+                        new Date(),
+                      );
+                      return (
+                        daysUntilDue >= 0 &&
+                        daysUntilDue <= 7 &&
+                        task.status !== "completed"
+                      );
+                    } catch {
+                      return false;
+                    }
+                  }).length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Calendar className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                      <p>No upcoming deadlines in the next 7 days</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
               <CardFooter>
-                <Link to="/templates/ai" className="w-full">
+                <Link to="/calendar" className="w-full">
                   <Button variant="outline" className="w-full gap-2">
-                    <Sparkles className="w-4 h-4" />
-                    Generate AI Template
+                    <Calendar className="w-4 h-4" />
+                    View Calendar
                   </Button>
                 </Link>
               </CardFooter>
             </Card>
 
-            {/* Boltic Automation Status */}
-            <Card className="border border-gray-200 dark:border-gray-700 shadow-sm">
+            {/* Performance Metrics */}
+            <Card className="border-border shadow-sm lg:w-1/3">
               <CardHeader>
-                <div className="flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-gray-500" />
-                  <div>
-                    <CardTitle>Boltic Automation</CardTitle>
-                    <CardDescription>
-                      Email & reminder workflows
-                    </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <LineChart className="w-5 h-5 text-green-500" />
+                    <CardTitle>Performance Metrics</CardTitle>
                   </div>
+                  <Badge variant="outline" className="text-xs">
+                    Today
+                  </Badge>
                 </div>
+                <CardDescription>Key performance indicators</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {/* Email Workflow */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-blue-500" />
-                        <span className="font-medium">Email Workflow</span>
-                      </div>
-                      <Badge className="bg-green-500 hover:bg-green-600">
-                        {bolticStatus.emailWorkflow.status}
-                      </Badge>
+                <div className="space-y-6">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium">
+                        Task Completion
+                      </span>
+                      <span className="text-sm font-bold">
+                        {completionPercentage}%
+                      </span>
                     </div>
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500 dark:text-gray-400">
-                          Emails Sent Today
-                        </span>
-                        <span className="font-medium">
-                          {bolticStatus.emailWorkflow.sentToday}
-                        </span>
-                      </div>
-                      <Progress value={98} className="h-2" />
-                    </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                      Success Rate: {bolticStatus.emailWorkflow.successRate}
-                    </div>
+                    <Progress value={completionPercentage} className="h-2" />
                   </div>
-
-                  <Separator />
-
-                  {/* Reminder Workflow */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Bell className="w-4 h-4 text-purple-500" />
-                        <span className="font-medium">Reminder Workflow</span>
-                      </div>
-                      <Badge className="bg-green-500 hover:bg-green-600">
-                        {bolticStatus.reminderWorkflow.status}
-                      </Badge>
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium">
+                        On-time Delivery
+                      </span>
+                      <span className="text-sm font-bold">
+                        {stats.totalTasks > 0
+                          ? Math.round(
+                              ((stats.totalTasks - stats.overdueTasks) /
+                                stats.totalTasks) *
+                                100,
+                            )
+                          : 0}
+                        %
+                      </span>
                     </div>
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500 dark:text-gray-400">
-                          Reminders Today
-                        </span>
-                        <span className="font-medium">
-                          {bolticStatus.reminderWorkflow.triggered}
-                        </span>
-                      </div>
-                      <Progress value={95} className="h-2" />
+                    <Progress
+                      value={
+                        stats.totalTasks > 0
+                          ? Math.round(
+                              ((stats.totalTasks - stats.overdueTasks) /
+                                stats.totalTasks) *
+                                100,
+                            )
+                          : 0
+                      }
+                      className="h-2"
+                    />
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium">
+                        Team Productivity
+                      </span>
+                      <span className="text-sm font-bold">
+                        {stats.teamMembers > 0
+                          ? Math.round(
+                              (stats.completedTasks / stats.teamMembers) * 10,
+                            )
+                          : 0}
+                      </span>
                     </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                      Success Rate: {bolticStatus.reminderWorkflow.successRate}
+                    <Progress
+                      value={
+                        stats.teamMembers > 0
+                          ? Math.min(
+                              100,
+                              Math.round(
+                                (stats.completedTasks / stats.teamMembers) * 10,
+                              ),
+                            )
+                          : 0
+                      }
+                      className="h-2"
+                    />
+                  </div>
+                </div>
+                <div className="mt-6 p-4 rounded-lg bg-gradient-to-r from-green-500/5 to-green-500/10 border border-green-200/20">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-sm">Total Teams</p>
+                      <p className="text-2xl font-bold">{stats.activeTeams}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium">Members</p>
+                      <p className="text-2xl font-bold">{stats.teamMembers}</p>
                     </div>
                   </div>
                 </div>
               </CardContent>
-              <CardFooter>
-                <Link to="/automations" className="w-full">
-                  <Button variant="outline" className="w-full gap-2">
-                    <Zap className="w-4 h-4" />
-                    Manage Automations
-                  </Button>
-                </Link>
-              </CardFooter>
             </Card>
-          </div>
-        </motion.div>
+          </motion.div>
+
+          {/* Footer Stats */}
+          <motion.div
+            className="flex flex-wrap gap-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
+            <div className="p-4 rounded-lg bg-gradient-to-r from-blue-500/5 to-blue-500/10 border border-border flex-1 min-w-[200px]">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    In Progress
+                  </p>
+                  <p className="text-2xl font-bold">{stats.inProgressTasks}</p>
+                </div>
+                <Clock className="w-8 h-8 text-blue-500/30" />
+              </div>
+            </div>
+            <div className="p-4 rounded-lg bg-gradient-to-r from-green-500/5 to-green-500/10 border border-border flex-1 min-w-[200px]">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Pending Tasks
+                  </p>
+                  <p className="text-2xl font-bold">{stats.pendingTasks}</p>
+                </div>
+                <AlertCircle className="w-8 h-8 text-green-500/30" />
+              </div>
+            </div>
+            <div className="p-4 rounded-lg bg-gradient-to-r from-purple-500/5 to-purple-500/10 border border-border flex-1 min-w-[200px]">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Teams Active
+                  </p>
+                  <p className="text-2xl font-bold">{stats.activeTeams}</p>
+                </div>
+                <Users className="w-8 h-8 text-purple-500/30" />
+              </div>
+            </div>
+            <div className="p-4 rounded-lg bg-gradient-to-r from-amber-500/5 to-amber-500/10 border border-border flex-1 min-w-[200px]">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Due Today
+                  </p>
+                  <p className="text-2xl font-bold">{stats.dueToday}</p>
+                </div>
+                <CalendarDays className="w-8 h-8 text-amber-500/30" />
+              </div>
+            </div>
+          </motion.div>
+        </div>
       </div>
-    </div>
+
+      {/* Task Form Modal */}
+      {isTaskModalOpen && (
+        <TaskFormModal
+          open={isTaskModalOpen}
+          onOpenChange={setIsTaskModalOpen}
+          editingTask={editingTask}
+          onSave={handleSaveTask}
+          isSubmitting={isSubmitting}
+          members={members}
+          teams={teams}
+        />
+      )}
+
+      {/* Send Reminder Modal */}
+      {isReminderModalOpen && taskForReminder && (
+        <SendReminderModal
+          open={isReminderModalOpen}
+          onOpenChange={setIsReminderModalOpen}
+          task={taskForReminder}
+          onSend={handleSendReminder}
+          isSubmitting={isSubmitting}
+        />
+      )}
+    </>
   );
 }

@@ -53,7 +53,6 @@ import {
   // slideIn,
 } from "@/components/FramerVariants";
 import { useAuth } from "@/contexts/AuthContext";
-
 // Navbar Component
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);

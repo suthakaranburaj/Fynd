@@ -25,6 +25,7 @@ import {
   Reminders
 } from "./pages";
 import { Toaster } from "@/components/ui/sonner";
+import ChatBot from "@/components/ChatBot";
 
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -60,7 +61,7 @@ function App() {
                   //     isExpanded={isExpanded}
                   //     setIsExpanded={setIsExpanded}
                   //   >
-                      <Home />
+                  <Home />
                   //   </Navbar>
                   // </PrivateRoute>
                 }
@@ -75,6 +76,7 @@ function App() {
                     >
                       <Dashboard />
                     </Navbar>
+                    {/* <ChatBot /> */}
                   </PrivateRoute>
                 }
               />
