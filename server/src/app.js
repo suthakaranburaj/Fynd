@@ -10,6 +10,7 @@ import notificationRoute from "./controllers/notifications/notificationRoutes.js
 import taskRoutes from "./controllers/task/taskRoutes.js";
 import { setupReminderCronJob } from "./cron/reminderCron.js";
 import reminderRoutes from "./controllers/reminder/reminderRoutes.js";
+import bolticRoutes from "./controllers/boltic/bolticRoute.js";
 
 const app = express();
 
@@ -33,6 +34,7 @@ app.use(cookieParser());
 setupReminderCronJob();
 
 app.use("/api/auth", userRoute);
+app.use("/api/boltic", bolticRoutes);
 app.use("/api/users", settingsRoute);
 app.use(verifyJWT);
 app.use("/api/notifications", notificationRoute);

@@ -10,7 +10,7 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
         req.cookies?.accessToken ||
         req.header("Authorization")?.replace("Bearer ", "") ||
         req.query?.token; // Added query parameter support
-
+    // console.log("Token received in middleware:", token);
     if (!token) {
         return sendResponse(
             res,
