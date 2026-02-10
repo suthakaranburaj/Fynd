@@ -156,42 +156,432 @@ const DashboardSkeleton = () => {
         {/* Stats Grid Skeleton */}
         <div className="flex flex-wrap gap-6">
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="border-border flex-1 min-w-[200px]">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-2">
-                    <div className="h-4 w-24 bg-muted rounded animate-pulse"></div>
-                    <div className="h-3 w-32 bg-muted rounded animate-pulse"></div>
+            <div key={i} className="flex-1 min-w-[200px]">
+              <Card className="border-border">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-2">
+                      <div className="h-4 w-24 bg-muted rounded animate-pulse"></div>
+                      <div className="h-3 w-32 bg-muted rounded animate-pulse"></div>
+                    </div>
+                    <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>
                   </div>
-                  <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="h-8 w-16 bg-muted rounded animate-pulse"></div>
-                  <div className="h-4 w-20 bg-muted rounded animate-pulse"></div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="h-8 w-16 bg-muted rounded animate-pulse"></div>
+                    <div className="h-4 w-20 bg-muted rounded animate-pulse"></div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           ))}
         </div>
 
         {/* Main Content Skeleton */}
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="lg:w-2/3 space-y-6">
-            <div className="h-96 bg-muted rounded animate-pulse"></div>
+            {/* Tasks Overview Skeleton */}
+            <Card className="border-border">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <div className="h-5 w-40 bg-muted rounded animate-pulse"></div>
+                    <div className="h-4 w-60 bg-muted rounded animate-pulse"></div>
+                  </div>
+                  <div className="h-9 w-32 bg-muted rounded animate-pulse"></div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-6 mb-6">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="flex-1 min-w-[150px]">
+                      <div className="flex flex-col items-center">
+                        <div className="h-24 w-24 bg-muted rounded-full animate-pulse"></div>
+                        <div className="mt-3 space-y-1 text-center">
+                          <div className="h-4 w-20 bg-muted rounded animate-pulse mx-auto"></div>
+                          <div className="h-3 w-24 bg-muted rounded animate-pulse mx-auto"></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="h-5 w-32 bg-muted rounded animate-pulse"></div>
+                    <div className="h-8 w-24 bg-muted rounded animate-pulse"></div>
+                  </div>
+                  <div className="space-y-2">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <div
+                        key={i}
+                        className="h-12 w-full bg-muted rounded animate-pulse"
+                      ></div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Quick Actions & Notifications Skeleton */}
             <div className="flex flex-col md:flex-row gap-6">
-              <div className="flex-1 h-64 bg-muted rounded animate-pulse"></div>
-              <div className="flex-1 h-64 bg-muted rounded animate-pulse"></div>
+              {/* Quick Actions Skeleton */}
+              <Card className="border-border flex-1">
+                <CardHeader>
+                  <div className="space-y-2">
+                    <div className="h-5 w-40 bg-muted rounded animate-pulse"></div>
+                    <div className="h-4 w-48 bg-muted rounded animate-pulse"></div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-3">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div
+                        key={i}
+                        className="flex-1 min-w-[140px] h-28 bg-muted rounded-xl animate-pulse"
+                      ></div>
+                    ))}
+                  </div>
+                  <div className="mt-6 p-4 rounded-lg bg-muted/50">
+                    <div className="space-y-2">
+                      <div className="h-4 w-24 bg-muted rounded animate-pulse"></div>
+                      <div className="h-3 w-full bg-muted rounded animate-pulse"></div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Notifications Skeleton */}
+              <Card className="border-border flex-1">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-2">
+                      <div className="h-5 w-32 bg-muted rounded animate-pulse"></div>
+                    </div>
+                    <div className="h-5 w-16 bg-muted rounded animate-pulse"></div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="space-y-2">
+                        <div className="h-4 w-3/4 bg-muted rounded animate-pulse"></div>
+                        <div className="h-3 w-full bg-muted rounded animate-pulse"></div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
+
+          {/* Right Column Skeleton */}
           <div className="lg:w-1/3 space-y-6">
-            <div className="h-48 bg-muted rounded animate-pulse"></div>
-            <div className="h-64 bg-muted rounded animate-pulse"></div>
+            {/* Recent Activity Skeleton */}
+            <Card className="border-border">
+              <CardHeader>
+                <div className="space-y-2">
+                  <div className="h-5 w-40 bg-muted rounded animate-pulse"></div>
+                  <div className="h-4 w-48 bg-muted rounded animate-pulse"></div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="space-y-2">
+                      <div className="h-4 w-3/4 bg-muted rounded animate-pulse"></div>
+                      <div className="h-3 w-full bg-muted rounded animate-pulse"></div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Performance Metrics Skeleton */}
+            <Card className="border-border">
+              <CardHeader>
+                <div className="space-y-2">
+                  <div className="h-5 w-40 bg-muted rounded animate-pulse"></div>
+                  <div className="h-4 w-48 bg-muted rounded animate-pulse"></div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="space-y-2">
+                      <div className="h-4 w-32 bg-muted rounded animate-pulse"></div>
+                      <div className="h-2 w-full bg-muted rounded animate-pulse"></div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
+        </div>
+
+        {/* Bottom Section Skeleton */}
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Upcoming Deadlines Skeleton */}
+          <Card className="border-border lg:w-2/3">
+            <CardHeader>
+              <div className="space-y-2">
+                <div className="h-5 w-40 bg-muted rounded animate-pulse"></div>
+                <div className="h-4 w-48 bg-muted rounded animate-pulse"></div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div
+                    key={i}
+                    className="h-16 w-full bg-muted rounded-lg animate-pulse"
+                  ></div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Footer Stats Skeleton */}
+          <div className="lg:w-1/3">
+            <div className="p-4 rounded-lg border border-border">
+              <div className="space-y-4">
+                {[1, 2].map((i) => (
+                  <div key={i} className="space-y-2">
+                    <div className="h-4 w-32 bg-muted rounded animate-pulse"></div>
+                    <div className="h-2 w-full bg-muted rounded animate-pulse"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer Stats Grid Skeleton */}
+        <div className="flex flex-wrap gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="p-4 rounded-lg border border-border flex-1 min-w-[200px]"
+            >
+              <div className="space-y-2">
+                <div className="h-4 w-32 bg-muted rounded animate-pulse"></div>
+                <div className="h-8 w-16 bg-muted rounded animate-pulse"></div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
+  );
+};
+
+// Individual Card Skeletons
+const StatCardSkeleton = () => {
+  return (
+    <div className="flex-1 min-w-[200px]">
+      <Card className="border-border bg-card">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <div className="h-4 w-24 bg-muted rounded animate-pulse"></div>
+              <div className="h-3 w-32 bg-muted rounded animate-pulse"></div>
+            </div>
+            <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <div className="h-8 w-16 bg-muted rounded animate-pulse"></div>
+            <div className="h-4 w-20 bg-muted rounded animate-pulse"></div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+const TaskOverviewSkeleton = () => {
+  return (
+    <Card className="border-border">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <div className="h-5 w-40 bg-muted rounded animate-pulse"></div>
+            <div className="h-4 w-60 bg-muted rounded animate-pulse"></div>
+          </div>
+          <div className="h-9 w-32 bg-muted rounded animate-pulse"></div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-wrap gap-6 mb-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="flex-1 min-w-[150px]">
+              <div className="flex flex-col items-center">
+                <div className="h-24 w-24 bg-muted rounded-full animate-pulse"></div>
+                <div className="mt-3 space-y-1 text-center">
+                  <div className="h-4 w-20 bg-muted rounded animate-pulse mx-auto"></div>
+                  <div className="h-3 w-24 bg-muted rounded animate-pulse mx-auto"></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="h-5 w-32 bg-muted rounded animate-pulse"></div>
+            <div className="h-8 w-24 bg-muted rounded animate-pulse"></div>
+          </div>
+          <div className="space-y-2">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div
+                key={i}
+                className="h-12 w-full bg-muted rounded animate-pulse"
+              ></div>
+            ))}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+const QuickActionsSkeleton = () => {
+  return (
+    <Card className="border-border flex-1">
+      <CardHeader>
+        <div className="space-y-2">
+          <div className="h-5 w-40 bg-muted rounded animate-pulse"></div>
+          <div className="h-4 w-48 bg-muted rounded animate-pulse"></div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-wrap gap-3">
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="flex-1 min-w-[140px] h-28 bg-muted rounded-xl animate-pulse"
+            ></div>
+          ))}
+        </div>
+        <div className="mt-6 p-4 rounded-lg bg-muted/50">
+          <div className="space-y-2">
+            <div className="h-4 w-24 bg-muted rounded animate-pulse"></div>
+            <div className="h-3 w-full bg-muted rounded animate-pulse"></div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+const NotificationsSkeleton = () => {
+  return (
+    <Card className="border-border">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <div className="h-5 w-32 bg-muted rounded animate-pulse"></div>
+          </div>
+          <div className="h-5 w-16 bg-muted rounded animate-pulse"></div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="p-3 rounded-lg">
+              <div className="space-y-2">
+                <div className="h-4 w-3/4 bg-muted rounded animate-pulse"></div>
+                <div className="h-3 w-full bg-muted rounded animate-pulse"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+const RecentActivitySkeleton = () => {
+  return (
+    <Card className="border-border">
+      <CardHeader>
+        <div className="space-y-2">
+          <div className="h-5 w-40 bg-muted rounded animate-pulse"></div>
+          <div className="h-4 w-48 bg-muted rounded animate-pulse"></div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            <div key={i} className="flex gap-3">
+              <div className="h-8 w-8 bg-muted rounded-full animate-pulse"></div>
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-3/4 bg-muted rounded animate-pulse"></div>
+                <div className="h-3 w-full bg-muted rounded animate-pulse"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+const UpcomingDeadlinesSkeleton = () => {
+  return (
+    <Card className="border-border lg:w-2/3">
+      <CardHeader>
+        <div className="space-y-2">
+          <div className="h-5 w-40 bg-muted rounded animate-pulse"></div>
+          <div className="h-4 w-48 bg-muted rounded animate-pulse"></div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div
+              key={i}
+              className="h-16 w-full bg-muted rounded-lg animate-pulse"
+            ></div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+const PerformanceMetricsSkeleton = () => {
+  return (
+    <Card className="border-border lg:w-1/3">
+      <CardHeader>
+        <div className="space-y-2">
+          <div className="h-5 w-40 bg-muted rounded animate-pulse"></div>
+          <div className="h-4 w-48 bg-muted rounded animate-pulse"></div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="space-y-2">
+              <div className="h-4 w-32 bg-muted rounded animate-pulse"></div>
+              <div className="h-2 w-full bg-muted rounded animate-pulse"></div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-6 p-4 rounded-lg bg-muted/50">
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <div className="h-4 w-24 bg-muted rounded animate-pulse"></div>
+              <div className="h-8 w-12 bg-muted rounded animate-pulse"></div>
+            </div>
+            <div className="space-y-2">
+              <div className="h-4 w-20 bg-muted rounded animate-pulse"></div>
+              <div className="h-8 w-12 bg-muted rounded animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
@@ -234,11 +624,11 @@ const StatCard = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -5, transition: { duration: 0.2 } }}
-      className="flex-1 min-w-[200px]"
+      className="flex-1 min-w-[200px] relative"
     >
       <Card className="border-border bg-card hover:shadow-lg transition-all duration-300 overflow-hidden group h-full">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-transparent via-white/5 to-transparent transform translate-x-16 -translate-y-16 rotate-45 group-hover:translate-x-20 transition-transform duration-500" />
-        <CardHeader className="pb-2 relative z-10">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-transparent via-white/5 to-transparent transform translate-x-16 -translate-y-16 rotate-45 group-hover:translate-x-20 transition-transform duration-500 -z-10" />
+        <CardHeader className="pb-2 relative">
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0">
               <CardTitle className="text-sm font-medium text-muted-foreground truncate">
@@ -249,13 +639,13 @@ const StatCard = ({
               </CardDescription>
             </div>
             <div
-              className={`${color} p-3 rounded-xl shadow-md group-hover:shadow-lg transition-shadow flex-shrink-0 ml-2`}
+              className={`${color} p-3 rounded-xl shadow-md group-hover:shadow-lg transition-shadow flex-shrink-0 ml-2 relative z-10`}
             >
               <Icon className="w-5 h-5 text-white" />
             </div>
           </div>
         </CardHeader>
-        <CardContent className="relative z-10">
+        <CardContent className="relative">
           <div className="flex items-end justify-between">
             <div className="flex-1 min-w-0">
               <div className="text-3xl font-bold text-foreground mb-1 truncate">
@@ -957,6 +1347,69 @@ export default function Dashboard() {
     return <DashboardSkeleton />;
   }
 
+  // Show skeleton cards when refreshing
+  if (refreshing) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 p-4 md:p-6">
+        <div className="max-w-9xl mx-auto space-y-6">
+          {/* Header Skeleton */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="space-y-2">
+              <div className="h-10 w-64 bg-muted rounded animate-pulse"></div>
+              <div className="h-4 w-80 bg-muted rounded animate-pulse"></div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-24 bg-muted rounded animate-pulse"></div>
+              <div className="h-9 w-32 bg-muted rounded animate-pulse"></div>
+            </div>
+          </div>
+
+          {/* Stats Grid Skeleton */}
+          <div className="flex flex-wrap gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <StatCardSkeleton key={i} />
+            ))}
+          </div>
+
+          {/* Main Content Grid */}
+          <div className="flex flex-col lg:flex-row gap-6">
+            <div className="lg:w-2/3 space-y-6">
+              <TaskOverviewSkeleton />
+              <div className="flex flex-col md:flex-row gap-6">
+                <QuickActionsSkeleton />
+                <NotificationsSkeleton />
+              </div>
+            </div>
+            <div className="lg:w-1/3 space-y-6">
+              <RecentActivitySkeleton />
+            </div>
+          </div>
+
+          {/* Bottom Section */}
+          <div className="flex flex-col lg:flex-row gap-6">
+            <UpcomingDeadlinesSkeleton />
+            <PerformanceMetricsSkeleton />
+          </div>
+
+          {/* Footer Stats */}
+          <div className="flex flex-wrap gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="p-4 rounded-lg border border-border flex-1 min-w-[200px]"
+              >
+                <div className="space-y-2">
+                  <div className="h-4 w-32 bg-muted rounded animate-pulse"></div>
+                  <div className="h-8 w-16 bg-muted rounded animate-pulse"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 p-4 md:p-6">
@@ -1023,7 +1476,7 @@ export default function Dashboard() {
             transition={{ duration: 0.5, delay: 0.1 }}
           >
             {statsData.map((stat, index) => (
-              <StatCard key={index} {...stat} loading={isLoading} />
+              <StatCard key={index} {...stat} loading={refreshing} />
             ))}
           </motion.div>
 
