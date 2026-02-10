@@ -64,6 +64,11 @@ export const getDailyEmailsForBoltic = asyncHandler(async (req, res) => {
                     .lean();
 
                 // Get overdue tasks
+                // Get yesterday's date (start of the day)
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                yesterday.setHours(0, 0, 0, 0);
+
                 const overdueTasks = await Task.find({
                     assignedTo: user._id,
                     dueDate: { $lt: today },
@@ -71,7 +76,8 @@ export const getDailyEmailsForBoltic = asyncHandler(async (req, res) => {
                     isDeleted: false,
                     organization: user.organization
                 }).lean();
-
+                // console.log(overdueTasks,"fweoi");
+                // return
                 const allTasks = [...overdueTasks, ...assignedTasks];
 
                 // Skip users with no tasks
