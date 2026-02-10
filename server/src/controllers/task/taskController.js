@@ -37,9 +37,9 @@ export const createTask = asyncHandler(async (req, res) => {
 
     // Validate due date is in the future
     const dueDateObj = new Date(dueDate);
-    if (dueDateObj <= new Date()) {
-        return sendResponse(res, false, null, "Due date must be in the future", 400);
-    }
+    // if (dueDateObj <= new Date()) {
+    //     return sendResponse(res, false, null, "Due date must be in the future", 400);
+    // }
 
     // Determine assignment type
     let assignedToType = "user";

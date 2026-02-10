@@ -1326,7 +1326,7 @@ export default function TaskManagement() {
                                         {task.title}
                                       </p>
                                       <div className="flex items-center gap-2 mt-1">
-                                        {task.project && (
+                                        {/* {task.project && (
                                           <Badge
                                             variant="outline"
                                             className="text-xs"
@@ -1334,7 +1334,7 @@ export default function TaskManagement() {
                                             <FolderKanban className="h-3 w-3 mr-1" />
                                             {task.project}
                                           </Badge>
-                                        )}
+                                        )} */}
                                         {task.tags.length > 0 && (
                                           <Badge
                                             variant="outline"
@@ -1372,8 +1372,8 @@ export default function TaskManagement() {
                                     </div>
                                   </div>
                                 </TableCell>
-                                <TableCell className="group-hover:bg-secondary/30 cursor-pointer max-w-xs">
-                                  <div className="line-clamp-2 text-sm">
+                                <TableCell className="group-hover:bg-secondary/30 cursor-pointer  max-w-40">
+                                  <div className="h-full text-sm line-clamp-2 wrap-break-word">
                                     {task.description || "No description"}
                                   </div>
                                   <div className="flex items-center gap-2 mt-2">
@@ -1558,7 +1558,6 @@ export default function TaskManagement() {
           teams={teams}
         />
       )}
-      // Update the modal call in TaskManagement:
       {isReminderModalOpen && taskForReminder && (
         <SendReminderModal
           open={isReminderModalOpen}
