@@ -216,7 +216,7 @@ const DayCell = ({
   return (
     <div
       className={cn(
-        "min-h-32 border border-gray-100 dark:border-gray-700 p-2 relative group",
+        "min-h-32 border border-accent/20 dark:border-gray-700 p-2 relative group",
         !day.isCurrentMonth && "bg-gray-50 dark:bg-gray-900/50",
         day.isToday && "bg-blue-50 dark:bg-blue-900/20",
       )}
