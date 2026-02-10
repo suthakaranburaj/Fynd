@@ -9,6 +9,7 @@ import {
   type AuthResponse,
   type NotificationPreferences,
 } from "@/types/user";
+import { getApiErrorMessage } from "@/utils/apiErrorhelper";
 
 export const userService = {
   // Register user

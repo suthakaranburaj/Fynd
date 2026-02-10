@@ -948,7 +948,7 @@ export default function Reminders() {
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-secondary/50">
+                      <TableRow className="">
                         <TableHead
                           className="font-semibold cursor-pointer"
                           onClick={() => handleSort("title")}

@@ -457,7 +457,7 @@ const HeroSection = () => {
                   </div>
                 ))}
               </div>
-              <div className="mt-6 h-48 bg-secondary/50 rounded-lg" />
+              <div className="mt-6 h-48  rounded-lg" />
             </div>
           </div>
         </motion.div>

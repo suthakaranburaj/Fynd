@@ -49,8 +49,9 @@ export const taskService = {
       }
       throw new Error(response.data.message || "Failed to fetch tasks");
     } catch (error) {
-      console.error("Error fetching tasks:", error);
-      throw error;
+      const message = getApiErrorMessage(error);
+      console.error("Error fetching tasks:", message);
+      throw new Error(message); // 👈 THIS is what UI will receive
     }
   },
 
@@ -64,8 +65,9 @@ export const taskService = {
       }
       throw new Error(response.data.message || "Failed to fetch task");
     } catch (error) {
-      console.error(`Error fetching task ${id}:`, error);
-      throw error;
+      const message = getApiErrorMessage(error);
+      console.error("Error fetching task:", message);
+      throw new Error(message); // 👈 THIS is what UI will receive
     }
   },
 
@@ -90,8 +92,9 @@ export const taskService = {
       }
       throw new Error(response.data.message || "Failed to create task");
     } catch (error) {
-      console.error("Error creating task:", error);
-      throw error;
+      const message = getApiErrorMessage(error);
+      console.error("Error creating task:", message);
+      throw new Error(message); // 👈 THIS is what UI will receive
     }
   },
 

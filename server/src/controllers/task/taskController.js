@@ -728,17 +728,18 @@ export const updateTask = asyncHandler(async (req, res) => {
             cancelled: ["pending"]
         };
 
-        if (allowedTransitions[task.status]?.includes(status)) {
+        // if (allowedTransitions[task.status]?.includes(status)) {
             task.status = status;
-        } else {
-            return sendResponse(
-                res,
-                false,
-                null,
-                `Cannot change status from ${task.status} to ${status}`,
-                400
-            );
-        }
+        // } 
+        // else {
+        //     return sendResponse(
+        //         res,
+        //         false,
+        //         null,
+        //         `Cannot change status from ${task.status} to ${status}`,
+        //         400
+        //     );
+        // }
     }
 
     // Update task

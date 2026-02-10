@@ -11,6 +11,7 @@ import type {
   MarkAllReadResponse,
   NotificationStatistics,
 } from "@/types/notification";
+import { getApiErrorMessage } from "@/utils/apiErrorhelper";
 
 class NotificationService {
   private baseUrl = "/notifications";
@@ -44,8 +45,9 @@ class NotificationService {
       }
       throw new Error(response.data.message || "Failed to fetch notifications");
     } catch (error) {
-      console.error("Error fetching main notifications:", error);
-      throw error;
+      const message = getApiErrorMessage(error);
+      console.error("Error fetching main notifications:", message);
+      throw new Error(message); // 👈 THIS is what UI will receive
     }
   }
 
@@ -77,8 +79,9 @@ class NotificationService {
       }
       throw new Error(response.data.message || "Failed to fetch notifications");
     } catch (error) {
-      console.error("Error fetching user notifications:", error);
-      throw error;
+      const message = getApiErrorMessage(error);
+      console.error("Error fetching user notifications:", message);
+      throw new Error(message); // 👈 THIS is what UI will receive
     }
   }
 
@@ -94,8 +97,9 @@ class NotificationService {
       }
       throw new Error(response.data.message || "Failed to mark as read");
     } catch (error) {
-      console.error("Error marking notification as read:", error);
-      throw error;
+      const message = getApiErrorMessage(error);
+      console.error("Error marking notification as read:", message);
+      throw new Error(message); // 👈 THIS is what UI will receive
     }
   }
 
@@ -111,8 +115,9 @@ class NotificationService {
       }
       throw new Error(response.data.message || "Failed to mark all as read");
     } catch (error) {
-      console.error("Error marking all notifications as read:", error);
-      throw error;
+      const message = getApiErrorMessage(error);
+      console.error("Error marking all notifications as read:", message);
+      throw new Error(message); // 👈 THIS is what UI will receive
     }
   }
 
@@ -128,8 +133,9 @@ class NotificationService {
       }
       throw new Error(response.data.message || "Failed to fetch statistics");
     } catch (error) {
-      console.error("Error fetching notification statistics:", error);
-      throw error;
+      const message = getApiErrorMessage(error);
+      console.error("Error fetching notification statistics:", message);
+      throw new Error(message); // 👈 THIS is what UI will receive
     }
   }
 

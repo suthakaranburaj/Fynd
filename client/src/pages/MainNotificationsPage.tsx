@@ -654,7 +654,7 @@ export default function MainNotificationsPage() {
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-secondary/50">
+                    <TableRow className="">
                       <TableHead className="font-semibold">
                         <div className="flex items-center gap-1">
                           Title & Description

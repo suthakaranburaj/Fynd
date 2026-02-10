@@ -44,8 +44,9 @@ export const reminderService = {
       }
       throw new Error(response.data.message || "Failed to fetch reminders");
     } catch (error) {
-      console.error("Error fetching reminders:", error);
-      throw error;
+      const message = getApiErrorMessage(error);
+      console.error("Error fetching reminders:", message);
+      throw new Error(message); // 👈 THIS is what UI will receive
     }
   },
 
@@ -66,8 +67,9 @@ export const reminderService = {
         response.data.message || "Failed to send manual reminder",
       );
     } catch (error) {
-      console.error("Error sending manual reminder:", error);
-      throw error;
+      const message = getApiErrorMessage(error);
+      console.error("Error sending manual reminder:", message);
+      throw new Error(message); // 👈 THIS is what UI will receive
     }
   },
 
@@ -85,8 +87,9 @@ export const reminderService = {
         response.data.message || "Failed to mark reminder as read",
       );
     } catch (error) {
-      console.error("Error marking reminder as read:", error);
-      throw error;
+      const message = getApiErrorMessage(error);
+      console.error("Error marking reminder as read:", message);
+      throw new Error(message); // 👈 THIS is what UI will receive
     }
   },
 
@@ -102,8 +105,9 @@ export const reminderService = {
       }
       throw new Error(response.data.message || "Failed to dismiss reminder");
     } catch (error) {
-      console.error("Error dismissing reminder:", error);
-      throw error;
+      const message = getApiErrorMessage(error);
+      console.error("Error dismissing reminder:", message);
+      throw new Error(message); // 👈 THIS is what UI will receive
     }
   },
 

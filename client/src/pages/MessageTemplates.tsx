@@ -810,8 +810,7 @@ const TemplateFormModal: React.FC<TemplateFormModalProps> = ({
 };
 
 // Main Component
-export default function MessageTemplates({
-}: MessageTemplatesProps) {
+export default function MessageTemplates({}: MessageTemplatesProps) {
   const [templates, setTemplates] =
     useState<MessageTemplate[]>(DEFAULT_TEMPLATES);
   const [filteredTemplates, setFilteredTemplates] =
@@ -1403,7 +1402,7 @@ export default function MessageTemplates({
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {TEMPLATE_VARIABLES.map((variable) => (
-                  <Card key={variable.key} className="bg-secondary/50">
+                  <Card key={variable.key} className="">
                     <CardContent className="p-4">
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">

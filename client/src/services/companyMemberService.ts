@@ -5,6 +5,7 @@ import type {
   CompanyMemberResponse,
   CompanyMembersFilters,
 } from "@/types/companyMember";
+import { getApiErrorMessage } from "@/utils/apiErrorhelper";
 
 export const companyMemberService = {
   // Get all company members with filters
@@ -39,8 +40,9 @@ export const companyMemberService = {
         response.data.message || "Failed to fetch company members",
       );
     } catch (error) {
-      console.error("Error fetching company members:", error);
-      throw error;
+      const message = getApiErrorMessage(error);
+      console.error("Error fetching company members", message);
+      throw new Error(message); // 👈 THIS is what UI will receive
     }
   },
 
@@ -60,8 +62,9 @@ export const companyMemberService = {
         response.data.message || "Failed to fetch company member",
       );
     } catch (error) {
-      console.error(`Error fetching company member ${id}:`, error);
-      throw error;
+      const message = getApiErrorMessage(error);
+      console.error("Error fetching company member:", message);
+      throw new Error(message); // 👈 THIS is what UI will receive
     }
   },
 

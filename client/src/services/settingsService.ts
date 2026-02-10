@@ -9,6 +9,7 @@ export interface NotificationSettings {
 export interface SettingsData {
   notifications: NotificationSettings;
 }
+import { getApiErrorMessage } from "@/utils/apiErrorhelper";
 
 export const settingsService = {
   // Get notification settings from backend
